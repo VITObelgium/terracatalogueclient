@@ -8,5 +8,5 @@ with open('terracatalogueclient/__init__.py', 'r') as fd:
 version = __version__
 
 setup(
-      version=version
+      version=version,
 )
