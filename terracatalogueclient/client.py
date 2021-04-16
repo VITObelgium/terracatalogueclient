@@ -3,7 +3,8 @@ import datetime as dt
 from urllib.parse import urljoin
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
-from typing import Iterator, List, Optional, Union
+import shapely.wkt as wkt
+from typing import Iterator, List, Optional, Union, Dict
 
 from terracatalogueclient.exceptions import TooManyResultsException
 
@@ -47,15 +48,24 @@ class Product:
 
     def __init__(self,
                  id: str,
+                 title: str,
                  geometry: BaseGeometry,
                  bbox: List[float],
+                 beginningDateTime : Optional[dt.datetime],
+                 endingDateTime: Optional[dt.datetime],
+                 properties: dict,
                  data: List[ProductFile],
                  related: List[ProductFile],
                  previews: List[ProductFile],
                  alternates: List[ProductFile]):
         self.id = id
+        self.title = title
         self.geometry = geometry
         self.bbox = bbox
+
+        self.beginningDateTime = beginningDateTime
+        self.endingDateTime = endingDateTime
+        self.properties = properties
 
         # product file references
         self.data = data
@@ -83,10 +93,10 @@ class Catalogue:
 
     def get_products(self,
                      collection: str,
-                     start: Optional[str] = None,
-                     end: Optional[str] = None,
-                     bbox: Optional = None,
-                     geometry: Optional[str] = None,
+                     start: Optional[Union[str, dt.date, dt.datetime]] = None,
+                     end: Optional[Union[str, dt.date, dt.datetime]] = None,
+                     bbox: Optional[Union[str, List[Union[int, float]], Dict[str, Union[int, float]]]] = None,
+                     geometry: Optional[Union[str, BaseGeometry]] = None,
                      title: Optional[str] = None,
                      productType: Optional[str] = None,
                      relativeOrbitNumber: Optional[Union[int, str]] = None,
@@ -100,8 +110,8 @@ class Catalogue:
         :param collection: collection to query
         :param start: start of the temporal interval to search
         :param end: end of the temporal interval to search
-        :param bbox: geographic bounding box
-        :param geometry: geometry as WKT Polygon
+        :param bbox: geographic bounding box as list or dict (west, south, east, north)
+        :param geometry: geometry as WKT string or Shapely geometry
         :param title: title of the product
         :param productType: product type
         :param relativeOrbitNumber: relative acquisition orbit number
@@ -156,6 +166,22 @@ class Catalogue:
                 elif isinstance(params[p], dt.date):
                     params[p] = dt.date.strftime(params[p], "%Y-%m-%d")
 
+        if 'geometry' in params:
+            p = 'geometry'
+            if isinstance(params[p], str):
+                pass
+            elif isinstance(params[p], BaseGeometry):
+                params[p] = wkt.dumps(params[p], trim=True)
+
+        if 'bbox' in params:
+            p = 'bbox'
+            if isinstance(params[p], str):
+                pass
+            elif isinstance(params[p], list):
+                params[p] = ','.join(str(i) for i in params[p])
+            elif isinstance(params[p], dict):
+                params[p] = f"{params[p]['west']},{params[p]['south']},{params[p]['east']},{params[p]['north']}"
+
         return params
 
     @staticmethod
@@ -199,9 +225,15 @@ class Catalogue:
         :param feature: feature as a JSON dict
         """
         id = feature['id']
+        title = feature['properties']['title']
         geometry = shape(feature['geometry'])
         bbox = feature['bbox']
 
+        # get first acquisitionParameters block, if available
+        acquisitionParameters = next(iter([i['acquisitionParameters'] for i in feature['properties']['acquisitionInformation'] if 'acquisitionParameters' in i]), None)
+        # acquisitionParameters = next(filter(lambda x: "acquisitionParameters" in x, feature['properties']['acquisitionInformation']), None)
+        beginningDateTime = _parse_date(acquisitionParameters['beginningDateTime']) if acquisitionParameters and 'beginningDateTime' in acquisitionParameters else None
+        endingDateTime = _parse_date(acquisitionParameters['endingDateTime']) if acquisitionParameters and 'endingDateTime' in acquisitionParameters else None
 
         # build product files
         links = feature['properties']['links']
@@ -210,12 +242,11 @@ class Catalogue:
         previews = Catalogue._build_files(links['previews']) if 'previews' in links else []
         alternates = Catalogue._build_files(links['alternates']) if 'alternates' in links else []
 
-        return Product(id, geometry, bbox, data, related, previews, alternates)
+        return Product(id, title, geometry, bbox, beginningDateTime, endingDateTime, feature['properties'], data, related, previews, alternates)
 
     @staticmethod
     def _build_files(links: list) -> List[ProductFile]:
         return [Catalogue._build_file(link) for link in links]
-
 
     @staticmethod
     def _build_file(link: dict) -> ProductFile:
@@ -225,3 +256,10 @@ class Catalogue:
         type = link.get('type', None)
         category = link.get('category', None)
         return ProductFile(href, length, title, type, category)
+
+
+def _parse_date(datestr: str) -> dt.datetime:
+    # remove the milliseconds
+    # eg. 2021-04-16T16:15:14.243Z --> 2021-04-16T16:15:14
+    datestr = datestr[:datestr.find('.')][:datestr.find('Z')]
+    return dt.datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%S")

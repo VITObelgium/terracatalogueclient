@@ -1,6 +1,7 @@
 import unittest
 from terracatalogueclient import Catalogue
 from terracatalogueclient.exceptions import TooManyResultsException
+import datetime as dt
 
 
 class TestIntegration(unittest.TestCase):
@@ -31,3 +32,11 @@ class TestIntegration(unittest.TestCase):
         count = catalogue.get_product_count("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", start="2020-01-01", end="2020-12-31", tileId="31UFS")
         products = catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", start="2020-01-01", end="2020-12-31", tileId="31UFS")
         self.assertEqual(count, len(list(products)))
+
+    def test_get_products_date(self):
+        catalogue = Catalogue()
+        start = dt.date(2020, 1, 1)
+        end = dt.date(2020, 1, 31)
+        products = catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", start=start, end=end, tileId="31UFS")
+        for p in products:
+            self.assertTrue(dt.datetime(2019, 12, 31) <= p.beginningDateTime <= dt.datetime(2020, 2, 1))
