@@ -116,7 +116,7 @@ class Catalogue:
         :param productType: product type
         :param relativeOrbitNumber: relative acquisition orbit number
         :param orbitDirection: acquisition orbit direction
-        :param cloudCover: cloud cover percentage
+        :param cloudCover: maximum cloud cover percentage as int/float; or number, set or interval of cloud cover percentages as a str
         :param tileId: tile identifier
         :param accessedFrom: information on the origin of the request
         :param kwargs: additional query parameters
@@ -134,6 +134,7 @@ class Catalogue:
         if cloudCover: kwargs['cloudCover'] = cloudCover
         if tileId: kwargs['tileId'] = tileId
         if accessedFrom: kwargs['accessedFrom'] = accessedFrom
+        self._convert_parameters(kwargs)
         return self._get_paginated_feature_generator(url, kwargs, self._build_product)
 
     def get_product_count(self, collection: str, **kwargs):
@@ -181,6 +182,11 @@ class Catalogue:
                 params[p] = ','.join(str(i) for i in params[p])
             elif isinstance(params[p], dict):
                 params[p] = f"{params[p]['west']},{params[p]['south']},{params[p]['east']},{params[p]['north']}"
+
+        if 'cloudCover' in params:
+            p = 'cloudCover'
+            if isinstance(params[p], int) or isinstance(params[p], float):
+                params[p] = f"{params[p]}]"
 
         return params
 
@@ -231,7 +237,6 @@ class Catalogue:
 
         # get first acquisitionParameters block, if available
         acquisitionParameters = next(iter([i['acquisitionParameters'] for i in feature['properties']['acquisitionInformation'] if 'acquisitionParameters' in i]), None)
-        # acquisitionParameters = next(filter(lambda x: "acquisitionParameters" in x, feature['properties']['acquisitionInformation']), None)
         beginningDateTime = _parse_date(acquisitionParameters['beginningDateTime']) if acquisitionParameters and 'beginningDateTime' in acquisitionParameters else None
         endingDateTime = _parse_date(acquisitionParameters['endingDateTime']) if acquisitionParameters and 'endingDateTime' in acquisitionParameters else None
 

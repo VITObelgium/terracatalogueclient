@@ -46,6 +46,20 @@ class TestClient(unittest.TestCase):
         Catalogue._convert_parameters(params)
         self.assertEqual(expected, params['bbox'])
 
+    def test_convert_parameters_cloudCover(self):
+        expected = "60]"
+        params = {
+            'cloudCover': 60
+        }
+        Catalogue._convert_parameters(params)
+        self.assertEqual(expected, params['cloudCover'])
+
+        expected = "50.0]"
+        params = {
+            'cloudCover': 50.0
+        }
+        Catalogue._convert_parameters(params)
+        self.assertEqual(expected, params['cloudCover'])
 
     def test_parse_date(self):
         self.assertEqual(dt.datetime(2021, 4, 16, 16, 15, 14), terracatalogueclient.client._parse_date("2021-04-16T16:15:14.243Z"))
