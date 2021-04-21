@@ -243,7 +243,7 @@ class Catalogue:
         :param product_file: product file
         """
         r = requests.head(product_file.href, auth=self._auth)
-        return r.ok and not r.is_redirect
+        return r.ok
 
     @staticmethod
     def _convert_parameters(params):
