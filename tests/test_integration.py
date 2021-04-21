@@ -4,6 +4,8 @@ from terracatalogueclient.exceptions import TooManyResultsException
 import datetime as dt
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
+import tempfile
+import os
 
 class TestIntegration(unittest.TestCase):
 
@@ -129,3 +131,44 @@ class TestIntegration(unittest.TestCase):
             for d in p.data:
                 self.assertIsNotNone(d.href)
                 self.assertIsNotNone(d.length)
+
+    def test_download_xml(self):
+        catalogue = Catalogue()
+        title = "S2A_20200101T142731_19HBV_FAPAR_20M_V200"
+        products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title=title))
+        product = products[0]
+        with tempfile.TemporaryDirectory() as dir:
+            catalogue.download_file(product.alternates[0], dir)
+            self.assertTrue(os.path.isfile(os.path.join(dir, f"{title}.xml")))
+
+    # Manual tests: set the MANUAL_TESTS environment variable to 1 to run these tests.
+
+    @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0, "Run manually to test download with authentication.")
+    def test_download(self):
+        catalogue = Catalogue().authenticate()
+        products = list(catalogue.get_products(
+            collection="urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
+            start="2021-02-01",
+            end="2021-02-28",
+            tileId="31UGS",
+            resolution=20
+        ))
+        print(len(products))
+        with tempfile.TemporaryDirectory() as tempdir:
+            catalogue.download_products(products, tempdir)
+            for product in products:
+                prod_dir = os.path.join(tempdir, product.title)
+                self.assertTrue(os.path.isdir(prod_dir))
+                for pf in product.data:
+                    self.assertTrue(os.path.isfile(os.path.join(prod_dir, os.path.basename(pf.href))))
+
+    @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0, "Run manually to test donwload authorization.")
+    def test_authorization_download(self):
+        catalogue = Catalogue()  # unauthenticated catalogue instance
+        catalogue_auth = Catalogue().authenticate()
+
+        title = "S2A_20200101T142731_19HBV_FAPAR_20M_V200"
+        products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title=title))
+        product = products[0]
+        self.assertFalse(catalogue._is_authorized_to_download(product.data[0]))  # unauthenticated download not possible
+        self.assertTrue(catalogue_auth._is_authorized_to_download(product.data[0]))  # authenticated download possible

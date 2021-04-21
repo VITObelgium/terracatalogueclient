@@ -3,5 +3,5 @@
 class TooManyResultsException(Exception):
     pass
 
-class InvalidParameterValue(Exception):
+class ProductDownloadException(Exception):
     pass

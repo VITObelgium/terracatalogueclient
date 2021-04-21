@@ -1,14 +1,19 @@
 import requests
 import datetime as dt
+import os
 from urllib.parse import urljoin
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 import shapely.wkt as wkt
-from typing import Iterator, List, Optional, Union, Dict
+from typing import Iterator, List, Optional, Union, Dict, Iterable
 
-from terracatalogueclient.exceptions import TooManyResultsException
+from terracatalogueclient import auth
+from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException
 
 DEFAULT_CATALOGUE_URL = "https://services.terrascope.be/catalogue/"
+DEFAULT_OIDC_CLIENT_ID = "terracatalogueclient"
+DEFAULT_OIDC_TOKEN_ENDPOINT = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/token"
+DEFAULT_OIDC_AUTHORIZATION_ENDPOINT = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/auth"
 
 
 class Collection:
@@ -41,6 +46,10 @@ class ProductFile:
 
     def __str__(self):
         return self.href
+
+    def is_downloadable(self):
+        href = self.href.lower()
+        return href.startswith("http")
 
 
 class Product:
@@ -85,6 +94,36 @@ class Catalogue:
         :param url: base URL of the catalogue endpoint
         """
         self.base_url = url.rstrip("/") + "/"
+        self._auth = auth.NoAuth()
+
+    def authenticate(
+            self,
+            authorization_url: str = DEFAULT_OIDC_AUTHORIZATION_ENDPOINT,
+            token_url: str = DEFAULT_OIDC_TOKEN_ENDPOINT,
+            client_id: str = DEFAULT_OIDC_CLIENT_ID
+    ) -> 'Catalogue':
+        """
+        Authenticate to the catalogue in an interactive way. A browser window will open to handle the sign-in procedure.
+
+        :return: the catalog object
+        """
+        self._auth = auth.authorization_code_grant(authorization_url=authorization_url, token_url=token_url, client_id=client_id)
+        return self
+
+    def authenticate_non_interactive(
+            self,
+            username: str,
+            password: str,
+            token_url: str = DEFAULT_OIDC_TOKEN_ENDPOINT,
+            client_id: str = DEFAULT_OIDC_CLIENT_ID
+    ) -> 'Catalogue':
+        """
+        Authenticate to the catalogue in a non-interactive way. This requires you to pass your user credentials directly in the code.
+
+        :return: the catalog object
+        """
+        self._auth = auth.resource_owner_password_credentials_grant(username=username, password=password, client_id=client_id, token_url=token_url)
+        return self
 
     def get_collections(self, **kwargs) -> Iterator[Collection]:
         """ Get the collections in the catalogue. """
@@ -154,6 +193,57 @@ class Catalogue:
             return response_json['totalResults']
         else:
             response.raise_for_status()
+
+    def download_products(self, products: Iterable[Product], path: str):
+        """ Download the given products. This will download all files belonging to the given products.
+
+         :param products: iterable of products to download
+         :param path: output directory to write files to
+         """
+        for product in products:
+            self.download_product(product, path)
+
+    def download_product(self, product: Product, path: str):
+        """ Download a single product. This will download all files belonging to the given product.
+
+        :param product: product to download
+        :param path: output directory to write files to
+        """
+        product_dir = os.path.join(path, product.title)
+        for product_file in product.data + product.related + product.alternates + product.previews:
+            self.download_file(product_file, product_dir)
+
+    def download_file(self, product_file: ProductFile, path: str):
+        """ Download a single product file.
+
+        :param product_file: product file to download
+        :param path: output directory to write files to
+        """
+        if product_file.is_downloadable():
+            if not self._is_authorized_to_download(product_file):
+                raise ProductDownloadException(f"You are not authorized to download this product. Make sure you are authenticated to the catalogue.")
+            # create output directory if it doesn't exists
+            if not os.path.exists(path):
+                os.makedirs(path)
+            filename = os.path.basename(product_file.href)
+            out_path = os.path.join(path, filename)
+            with requests.get(product_file.href, stream=True, auth=self._auth, allow_redirects=False) as r:
+                r.raise_for_status()
+                with open(out_path, 'wb') as f:
+                    for chunk in r.iter_content():
+                        if chunk:
+                            f.write(chunk)
+        else:
+            raise ProductDownloadException(f"Could not download product file, {product_file.href} is not a downloadable path.")
+
+    def _is_authorized_to_download(self, product_file: ProductFile) -> bool:
+        """ Check if the authenticated user has authorization to download the product file.
+        If the user is not authenticated, a redirect will take place.
+
+        :param product_file: product file
+        """
+        r = requests.head(product_file.href, auth=self._auth)
+        return r.ok and not r.is_redirect
 
     @staticmethod
     def _convert_parameters(params):
