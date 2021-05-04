@@ -125,9 +125,21 @@ class Catalogue:
         self._auth = auth.resource_owner_password_credentials_grant(username=username, password=password, client_id=client_id, token_url=token_url)
         return self
 
-    def get_collections(self, **kwargs) -> Iterator[Collection]:
+    def get_collections(self,
+                        start: Optional[Union[str, dt.date, dt.datetime]] = None,
+                        end: Optional[Union[str, dt.date, dt.datetime]] = None,
+                        bbox: Optional[Union[str, List[Union[int, float]], Dict[str, Union[int, float]]]] = None,
+                        geometry: Optional[Union[str, BaseGeometry]] = None,
+                        platform: Optional[str] = None,
+                        **kwargs) -> Iterator[Collection]:
         """ Get the collections in the catalogue. """
         url = urljoin(self.base_url, "collections")
+        if start: kwargs['start'] = start
+        if end: kwargs['end'] = end
+        if bbox: kwargs['bbox'] = bbox
+        if geometry: kwargs['geometry'] = geometry
+        if platform: kwargs['platform'] = platform
+        self._convert_parameters(kwargs)
         return self._get_paginated_feature_generator(url, kwargs, self._build_collection)
 
     def get_products(self,

@@ -4,6 +4,7 @@ import terracatalogueclient.client
 import datetime as dt
 from shapely.geometry import box
 
+
 class TestClient(unittest.TestCase):
 
     def test_url_join(self):

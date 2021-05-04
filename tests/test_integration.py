@@ -7,6 +7,7 @@ from shapely.geometry.base import BaseGeometry
 import tempfile
 import os
 
+
 class TestIntegration(unittest.TestCase):
 
     def test_get_collections(self):
@@ -16,6 +17,29 @@ class TestIntegration(unittest.TestCase):
         self.assertIn("urn:eop:VITO:CGS_S1_GRD_L1", collection_ids)
         self.assertIn("urn:eop:VITO:CGS_S1_GRD_SIGMA0_L1", collection_ids)
         self.assertIn("urn:eop:VITO:CGS_S1_SLC_L1", collection_ids)
+
+    def test_get_collections_by_platform(self):
+        catalogue = Catalogue()
+        collections = list(catalogue.get_collections(platform="SENTINEL-1"))
+        self.assertTrue(len(collections) > 0)
+        for c in collections:
+            self.assertTrue(any(a['platform']['platformShortName'] == "SENTINEL-1" for a in c.properties['acquisitionInformation']))
+
+    def test_get_collection_by_date(self):
+        catalogue = Catalogue()
+        collections = list(catalogue.get_collections(start=dt.date(2020, 1, 1), end=dt.date(2020, 12, 31)))
+        self.assertTrue(len(collections) > 0)
+
+    def test_get_collections_by_bbox(self):
+        catalogue = Catalogue()
+        collections = list(catalogue.get_collections(bbox={'west': 4.1, 'south': 50, "east": 5.5, "north": 51}))
+        self.assertTrue(len(collections) > 0)
+
+    def test_get_collections_by_geometry(self):
+        catalogue = Catalogue()
+        geom = box(4, 50, 6, 51)
+        collections = list(catalogue.get_collections(geometry=geom))
+        self.assertTrue(len(collections) > 0)
 
     def test_get_too_many_products(self):
         catalogue = Catalogue()
