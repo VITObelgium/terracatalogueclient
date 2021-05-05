@@ -7,13 +7,14 @@ from shapely.geometry.base import BaseGeometry
 import shapely.wkt as wkt
 from typing import Iterator, List, Optional, Union, Dict, Iterable
 
-from terracatalogueclient import auth
+from terracatalogueclient import auth, __title__, __version__
 from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException
 
 DEFAULT_CATALOGUE_URL = "https://services.terrascope.be/catalogue/"
 DEFAULT_OIDC_CLIENT_ID = "terracatalogueclient"
 DEFAULT_OIDC_TOKEN_ENDPOINT = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/token"
 DEFAULT_OIDC_AUTHORIZATION_ENDPOINT = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/auth"
+_DEFAULT_REQUEST_HEADERS = {"User-Agent": f"{__title__}/{__version__}"}
 
 
 class Collection:
@@ -199,7 +200,7 @@ class Catalogue:
         url = urljoin(self.base_url, "products")
         kwargs['collection'] = collection
         self._convert_parameters(kwargs)
-        response = requests.get(url, params=kwargs)
+        response = requests.get(url, params=kwargs, headers=_DEFAULT_REQUEST_HEADERS)
         if response.status_code == requests.codes.ok:
             response_json = response.json()
             return response_json['totalResults']
@@ -239,7 +240,7 @@ class Catalogue:
                 os.makedirs(path)
             filename = os.path.basename(product_file.href)
             out_path = os.path.join(path, filename)
-            with requests.get(product_file.href, stream=True, auth=self._auth, allow_redirects=False) as r:
+            with requests.get(product_file.href, stream=True, auth=self._auth, allow_redirects=False, headers=_DEFAULT_REQUEST_HEADERS) as r:
                 r.raise_for_status()
                 with open(out_path, 'wb') as f:
                     for chunk in r.iter_content():
@@ -254,7 +255,7 @@ class Catalogue:
 
         :param product_file: product file
         """
-        r = requests.head(product_file.href, auth=self._auth)
+        r = requests.head(product_file.href, auth=self._auth, headers=_DEFAULT_REQUEST_HEADERS)
         return r.ok
 
     @staticmethod
@@ -294,7 +295,7 @@ class Catalogue:
 
     @staticmethod
     def _get_paginated_feature_generator(url: str, url_params: dict, builder) -> Iterator:
-        response = requests.get(url, params=url_params)
+        response = requests.get(url, params=url_params, headers=_DEFAULT_REQUEST_HEADERS)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -308,7 +309,7 @@ class Catalogue:
 
             while 'next' in response_json['properties']['links']:
                 url = response_json['properties']['links']['next'][0]['href']
-                response = requests.get(url)
+                response = requests.get(url, headers=_DEFAULT_REQUEST_HEADERS)
 
                 if response.status_code == requests.codes.ok:
                     response_json = response.json()
