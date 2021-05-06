@@ -8,7 +8,7 @@ import shapely.wkt as wkt
 from typing import Iterator, List, Optional, Union, Dict, Iterable, Tuple, Callable, TypeVar
 
 from terracatalogueclient import auth, __title__, __version__
-from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException, ParameterParserException
+from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException, ParameterParserException, SearchException
 
 T = TypeVar('T')
 
@@ -213,7 +213,7 @@ class Catalogue:
             response_json = response.json()
             return response_json['totalResults']
         else:
-            response.raise_for_status()
+            raise SearchException(response)
 
     def download_products(self, products: Iterable[Product], path: str):
         """ Download the given products. This will download all files belonging to the given products.
@@ -330,8 +330,7 @@ class Catalogue:
                 else:
                     response.raise_for_status()
         else:
-            # TODO custom error handling, custom exceptions?
-            response.raise_for_status()
+            raise SearchException(response)
 
     @staticmethod
     def _build_collection(feature: dict) -> Collection:

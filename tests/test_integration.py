@@ -1,6 +1,6 @@
 import unittest
 from terracatalogueclient import Catalogue
-from terracatalogueclient.exceptions import TooManyResultsException
+from terracatalogueclient.exceptions import TooManyResultsException, SearchException
 from terracatalogueclient.client import _parse_date
 import datetime as dt
 from shapely.geometry import box
@@ -154,7 +154,16 @@ class TestIntegration(unittest.TestCase):
     def test_get_products_unsupported_parameter(self):
         catalogue = Catalogue()
         products = catalogue.get_products("urn:eop:VITO:CGS_S1_SLC_L1", test="test")
-        self.assertRaises(Exception, list, products)  # getting items from the generator and putting them in a list raises the error
+        self.assertRaises(SearchException, list, products)  # getting items from the generator and putting them in a list raises the error
+
+
+    def test_get_product_count_invalid_parameter_values(self):
+        catalogue = Catalogue()
+        self.assertRaises(
+            SearchException,
+            catalogue.get_product_count,
+            "urn:eop:VITO:CGS_S1_SLC_L1", orbitDirection="test", geometry="polygon"
+        )
 
     def test_product_building(self):
         catalogue = Catalogue()
