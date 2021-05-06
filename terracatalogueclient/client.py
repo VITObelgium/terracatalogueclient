@@ -5,10 +5,12 @@ from urllib.parse import urljoin
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 import shapely.wkt as wkt
-from typing import Iterator, List, Optional, Union, Dict, Iterable
+from typing import Iterator, List, Optional, Union, Dict, Iterable, Tuple, Callable, TypeVar
 
 from terracatalogueclient import auth, __title__, __version__
-from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException
+from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException, ParameterParserException
+
+T = TypeVar('T')
 
 DEFAULT_CATALOGUE_URL = "https://services.terrascope.be/catalogue/"
 DEFAULT_OIDC_CLIENT_ID = "terracatalogueclient"
@@ -153,8 +155,10 @@ class Catalogue:
                      productType: Optional[str] = None,
                      relativeOrbitNumber: Optional[Union[int, str]] = None,
                      orbitDirection: Optional[str] = None,
-                     cloudCover: Optional[Union[float, int, str]] = None,
+                     cloudCover: Optional[Union[Tuple[Union[float, int, None], Union[float, int, None]], float, int, str]] = None,
                      tileId: Optional[str] = None,
+                     publicationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
+                     modificationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
                      accessedFrom: Optional[str] = None,
                      **kwargs) -> Iterator[Product]:
         """ Get the products matching the query.
@@ -168,8 +172,10 @@ class Catalogue:
         :param productType: product type
         :param relativeOrbitNumber: relative acquisition orbit number
         :param orbitDirection: acquisition orbit direction
-        :param cloudCover: maximum cloud cover percentage as int/float; or number, set or interval of cloud cover percentages as a str
+        :param cloudCover: maximum cloud cover percentage as int/float; cloud cover percentage interval as tuple; or number, set or interval of cloud cover percentages as a str
         :param tileId: tile identifier
+        :param publicationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
+        :param modificationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
         :param accessedFrom: information on the origin of the request
         :param kwargs: additional query parameters
         """
@@ -185,6 +191,8 @@ class Catalogue:
         if orbitDirection: kwargs['orbitDirection'] = orbitDirection
         if cloudCover: kwargs['cloudCover'] = cloudCover
         if tileId: kwargs['tileId'] = tileId
+        if publicationDate: kwargs['publicationDate'] = publicationDate
+        if modificationDate: kwargs['modificationDate'] = modificationDate
         if accessedFrom: kwargs['accessedFrom'] = accessedFrom
         self._convert_parameters(kwargs)
         return self._get_paginated_feature_generator(url, kwargs, self._build_product)
@@ -261,14 +269,16 @@ class Catalogue:
     @staticmethod
     def _convert_parameters(params):
         parameter_time = ['start', 'end']
+        parameter_time_interval = ['publicationDate', 'modificationDate']
+
         for p in parameter_time:
             if p in params:
-                if isinstance(params[p], str):
-                    pass
-                elif isinstance(params[p], dt.datetime):
-                    params[p] = dt.datetime.strftime(params[p], "%Y-%m-%dT%H:%M:%SZ")
-                elif isinstance(params[p], dt.date):
-                    params[p] = dt.date.strftime(params[p], "%Y-%m-%d")
+                params[p] = _date_to_str(params[p])
+
+        for p in parameter_time_interval:
+            if p in params:
+                if type(params[p]) == tuple:
+                    params[p] = _tuple_to_interval_str(params[p], p, _date_to_str)
 
         if 'geometry' in params:
             p = 'geometry'
@@ -288,7 +298,9 @@ class Catalogue:
 
         if 'cloudCover' in params:
             p = 'cloudCover'
-            if isinstance(params[p], int) or isinstance(params[p], float):
+            if type(params[p]) == tuple:
+                params[p] = _tuple_to_interval_str(params[p], p, str)
+            elif isinstance(params[p], int) or isinstance(params[p], float):
                 params[p] = f"{params[p]}]"
 
         return params
@@ -371,3 +383,33 @@ def _parse_date(datestr: str) -> dt.datetime:
     # eg. 2021-04-16T16:15:14.243Z --> 2021-04-16T16:15:14
     datestr = datestr[:datestr.find('.')][:datestr.find('Z')]
     return dt.datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%S")
+
+
+def _date_to_str(date: Union[str, dt.datetime, dt.date]) -> str:
+    if isinstance(date, str):
+        return date
+    elif isinstance(date, dt.datetime):
+        return dt.datetime.strftime(date, "%Y-%m-%dT%H:%M:%SZ")
+    elif isinstance(date, dt.date):
+        return dt.date.strftime(date, "%Y-%m-%d")
+
+
+def _tuple_to_interval_str(tuple: Tuple[T, T], param_name: str, formatter: Callable[[T], str]) -> str:
+    if len(tuple) != 2:
+        raise ParameterParserException(f"Failed to parse the value of the '{param_name}' parameter. "
+                                       f"A tuple of length {len(tuple)} is not supported. "
+                                       f"To use an interval, the tuple should be of length 2.")
+
+    t1, t2 = tuple
+    if t1 is None and t2 is None:
+        # filtering doesn't have any effect, remove it
+        return ""
+    elif t1 is None:
+        # left unbounded
+        return f"{formatter(t2)}]"
+    elif t2 is None:
+        # right unbounded
+        return f"[{formatter(t1)}"
+    else:
+        # both sides bounded
+        return f"[{formatter(t1)},{formatter(t2)}]"

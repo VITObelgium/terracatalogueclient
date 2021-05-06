@@ -1,6 +1,7 @@
 import unittest
 from terracatalogueclient import Catalogue
 from terracatalogueclient.exceptions import TooManyResultsException
+from terracatalogueclient.client import _parse_date
 import datetime as dt
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
@@ -129,6 +130,26 @@ class TestIntegration(unittest.TestCase):
                 [i['acquisitionParameters'] for i in p.properties['acquisitionInformation'] if
                  'acquisitionParameters' in i]))
             self.assertEqual(tileId, acquisitionParameters['tileId'])
+
+    def test_get_products_publicationDate(self):
+        catalogue = Catalogue()
+        publicationDate = (dt.date(2021, 2, 20), dt.datetime(2021, 2, 22, 23, 59, 59))
+        products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_NDVI_V2", publicationDate=publicationDate))
+        self.assertTrue(products)
+        for p in products:
+            published = _parse_date(p.properties['published'])
+            self.assertTrue(dt.datetime.combine(publicationDate[0], dt.datetime.min.time()) <= published <= publicationDate[1])
+
+    def test_get_products_modificationDate(self):
+        catalogue = Catalogue()
+        today = dt.date.today()
+        modificationDate = (today - dt.timedelta(weeks=4), None)
+        products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_NDVI_V2", tileId="31UFS", modificationDate=modificationDate))
+        self.assertTrue(products)
+        for p in products:
+            updated = _parse_date(p.properties['updated'])
+            self.assertTrue(dt.datetime.combine(modificationDate[0], dt.datetime.min.time()) <= updated)
+
 
     def test_get_products_unsupported_parameter(self):
         catalogue = Catalogue()

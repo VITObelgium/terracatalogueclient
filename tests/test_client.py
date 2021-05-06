@@ -62,6 +62,32 @@ class TestClient(unittest.TestCase):
         Catalogue._convert_parameters(params)
         self.assertEqual(expected, params['cloudCover'])
 
+        params = Catalogue._convert_parameters({'cloudCover': (None, None)})
+        self.assertEqual("", params['cloudCover'])
+
+        params = Catalogue._convert_parameters({'cloudCover': (None, 60)})
+        self.assertEqual("60]", params['cloudCover'])
+
+        params = Catalogue._convert_parameters({'cloudCover': (1.0, 78)})
+        self.assertEqual("[1.0,78]", params['cloudCover'])
+
+    def test_convert_parameters_publicationDate(self):
+        # both sides unbounded
+        params = Catalogue._convert_parameters({'publicationDate': (None, None)})
+        self.assertEqual("", params['publicationDate'])
+
+        # left unbounded
+        params = Catalogue._convert_parameters({'publicationDate': (None, dt.date(2020, 1, 1))})
+        self.assertEqual("2020-01-01]", params['publicationDate'])
+
+        # right unbounded
+        params = Catalogue._convert_parameters({'publicationDate': (dt.date(2021, 1, 1), None)})
+        self.assertEqual("[2021-01-01", params['publicationDate'])
+
+        # both sides bounded
+        params = Catalogue._convert_parameters({'publicationDate': (dt.datetime(2021, 2, 20, 12, 34, 56), dt.date(2021, 3, 1))})
+        self.assertEqual("[2021-02-20T12:34:56Z,2021-03-01]", params['publicationDate'])
+
     def test_parse_date(self):
         self.assertEqual(dt.datetime(2021, 4, 16, 16, 15, 14), terracatalogueclient.client._parse_date("2021-04-16T16:15:14.243Z"))
         self.assertEqual(dt.datetime(2020, 2, 20, 18, 12, 38), terracatalogueclient.client._parse_date("2020-02-20T18:12:38Z"))
