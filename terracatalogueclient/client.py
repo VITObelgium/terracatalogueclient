@@ -90,7 +90,7 @@ class Product:
 
 
 class Catalogue:
-    """ Connection to a catalogue endpoint, which allows for searching. """
+    """ Connection to a catalogue endpoint, which allows for searching and downloading EO products. """
 
     def __init__(self, url: str = DEFAULT_CATALOGUE_URL):
         """
@@ -108,7 +108,10 @@ class Catalogue:
         """
         Authenticate to the catalogue in an interactive way. A browser window will open to handle the sign-in procedure.
 
-        :return: the catalog object
+        :param authorization_url: OIDC authorization endpoint
+        :param token_url: OIDC token endpoint
+        :param client_id: OIDC client identifier
+        :return: the catalogue object
         """
         self._auth = auth.authorization_code_grant(authorization_url=authorization_url, token_url=token_url, client_id=client_id)
         return self
@@ -123,7 +126,11 @@ class Catalogue:
         """
         Authenticate to the catalogue in a non-interactive way. This requires you to pass your user credentials directly in the code.
 
-        :return: the catalog object
+        :param username: username
+        :param password: password
+        :param token_url: OIDC token endpoint
+        :param client_id: OIDC client identifier
+        :return: the catalogue object
         """
         self._auth = auth.resource_owner_password_credentials_grant(username=username, password=password, client_id=client_id, token_url=token_url)
         return self

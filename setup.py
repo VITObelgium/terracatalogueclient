@@ -18,5 +18,8 @@ setup(
     install_requires=["requests", "requests-auth", "shapely"],
     test_suite="tests",
     tests_require=["pytest"],
-    setup_requires=["pytest-runner"]
+    setup_requires=["pytest-runner"],
+    extras_require={
+        "docs": ["sphinx", "sphinx-autodoc-typehints"]
+    }
 )
