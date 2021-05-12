@@ -21,6 +21,13 @@ class SearchException(Exception):
 
     Follows the OpenSearch GeoJSON Response Encoding specification:
     https://docs.opengeospatial.org/is/17-047r1/17-047r1.html#39
+
+    :ivar response: error response
+    :vartype response: requests.Response
+    :ivar body: JSON body of the response
+    :vartype body: dict
+    :ivar search_exceptions: list of reported search exceptions
+    :vartype search_exceptions: list
     """
 
     def __init__(self, response: requests.Response, *args: object) -> None:

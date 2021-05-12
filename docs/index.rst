@@ -16,6 +16,8 @@ More information about the OpenSearch interface can be found in the `Terrascope 
    :maxdepth: 2
    :caption: Contents:
 
+   installation
+   usage
    api
 
 Indices and tables

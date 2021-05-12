@@ -14,10 +14,23 @@ This package is available in the public Terrascope PyPi repository and can be in
     [global]
     index-url = https://artifactory.vgt.vito.be/api/pypi/python-packages/simple
     ```
-- install the terracatalogueclient package
+- install the `terracatalogueclient` package
     ```
     $ pip install terracatalogueclient
     ```
 
 When you are using a [Terrascope Virtual Machine (VM) or Notebooks](https://terrascope.be/en/services), 
 the package is already pre-installed for you.
+
+## Development
+### Building the docs
+Install the documentation dependencies:
+```
+$ pip install -e .[docs]
+```
+
+Build the documentation:
+```
+$ cd docs/
+$ make html
+```

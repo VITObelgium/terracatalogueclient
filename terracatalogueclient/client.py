@@ -20,7 +20,18 @@ _DEFAULT_REQUEST_HEADERS = {"User-Agent": f"{__title__}/{__version__}"}
 
 
 class Collection:
-    """ Collection returned from a catalogue search. """
+    """
+    Collection returned from a catalogue search.
+
+    :ivar id: collection identifier
+    :vartype id: str
+    :ivar geometry: collection geometry as a Shapely geometry
+    :vartype geometry: BaseGeometry
+    :ivar bbox: bounding box
+    :vartype bbox: List[float]
+    :ivar properties: collection properties
+    :vartype properties: dict
+    """
 
     def __init__(self, id: str, geometry: BaseGeometry, bbox: List[float], properties: dict):
         self.id = id
@@ -33,11 +44,24 @@ class Collection:
 
 
 class ProductFile:
-    """ File that belongs to a product. """
+    """
+    File that belongs to a product.
+
+    :ivar href: URI locator of the product file
+    :vartype href: str
+    :ivar length: content length in bytes
+    :vartype length: Optional[int]
+    :ivar title: title of the product file
+    :vartype title: Optional[str]
+    :ivar type: content type
+    :vartype type: Optional[str]
+    :ivar category: category, only applicable for previews or related files
+    :vartype category: Optional[str]
+    """
 
     def __init__(self,
                  href: str,
-                 length: int,
+                 length: Optional[int],
                  title: Optional[str] = None,
                  type: Optional[str] = None,
                  category: Optional[str] = None):
@@ -56,7 +80,32 @@ class ProductFile:
 
 
 class Product:
-    """ Product entry returned from a catalogue search. """
+    """
+    Product entry returned from a catalogue search.
+
+    :ivar id: product identifier
+    :vartype id: str
+    :ivar title: product title
+    :vartype title: str
+    :ivar geometry: product geometry as a Shapely geometry
+    :vartype geometry: BaseGeometry
+    :ivar bbox: bounding box
+    :vartype bbox: List[float]
+    :ivar beginningDateTime: acquisition start date time
+    :vartype beginningDateTime: dt.datetime
+    :ivar endingDateTime: acquisition end date time
+    :vartype endingDateTime: dt.datetime
+    :ivar properties: product properties
+    :vartype properties: dict
+    :ivar data: product data files
+    :vartype data: List[ProductFile]
+    :ivar related: related resources (eg. cloud mask)
+    :vartype related: List[ProductFile]
+    :ivar previews: previews or quicklooks of the product
+    :vartype previews: List[ProductFile]
+    :ivar alternates: metadata description in an alternative format
+    :vartype alternates: List[ProductFile]
+    """
 
     def __init__(self,
                  id: str,
@@ -142,7 +191,16 @@ class Catalogue:
                         geometry: Optional[Union[str, BaseGeometry]] = None,
                         platform: Optional[str] = None,
                         **kwargs) -> Iterator[Collection]:
-        """ Get the collections in the catalogue. """
+        """
+        Get the collections in the catalogue.
+
+        :param start: start of the temporal interval to search
+        :param end: end of the temporal interval to search
+        :param bbox: geographic bounding box as list or dict (west, south, east, north)
+        :param geometry: geometry as WKT string or Shapely geometry
+        :param platform: acquisition platform
+        :param \**kwargs: additional query parameters can be provided as keyword arguments
+        """
         url = urljoin(self.base_url, "collections")
         if start: kwargs['start'] = start
         if end: kwargs['end'] = end
@@ -184,7 +242,7 @@ class Catalogue:
         :param publicationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
         :param modificationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
         :param accessedFrom: information on the origin of the request
-        :param kwargs: additional query parameters
+        :param \**kwargs: additional query parameters can be provided as keyword arguments
         """
         url = urljoin(self.base_url, "products")
         kwargs['collection'] = collection
@@ -210,7 +268,7 @@ class Catalogue:
         This is significantly more efficient than loading all results and then counting.
 
         :param collection: collection to query
-        :param kwargs: query parameters, check get_products() for more information on query parameters
+        :param \**kwargs: query parameters, check :meth:`~terracatalogueclient.client.Catalogue.get_products` for more information on query parameters
         """
         url = urljoin(self.base_url, "products")
         kwargs['collection'] = collection
@@ -377,7 +435,7 @@ class Catalogue:
     @staticmethod
     def _build_file(link: dict) -> ProductFile:
         href = link.get('href')
-        length = link.get('length')
+        length = link.get('length', None)
         title = link.get('title', None)
         type = link.get('type', None)
         category = link.get('category', None)
