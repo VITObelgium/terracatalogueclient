@@ -1,0 +1,51 @@
+name: Sphinx to GitHub Pages
+
+# Controls when the action will run.
+on:
+  push:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - uses: ammaraskar/sphinx-action@master
+        with:
+          docs-folder: "docs/"
+
+      # Create an artifact of the HTML output
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Documentation
+          path: docs/_build/html/
+
+      # Publish docs on gh-pages branch
+      - name: Commit documentation
+        run: |
+          mkdir gh-pages
+          cp -r docs/_build/html/* gh-pages/
+          cd gh-pages
+          git init -b gh-pages
+          touch .nojekyll
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Update documentation" -a || true
+      - name: Push documentation
+        uses: ad-m/github-push-action@master
+        with:
+          branch: gh-pages
+          directory: gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          force: true
