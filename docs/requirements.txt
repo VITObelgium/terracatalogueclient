@@ -1,3 +1,6 @@
 # GitHub Action builds with Sphinx 2.4.4
 sphinx-rtd-theme
 sphinx-autodoc-typehints
+shapely
+requests
+requests-auth
