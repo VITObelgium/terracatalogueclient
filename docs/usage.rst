@@ -36,7 +36,7 @@ The `OpenSearch Description Document <https://docs.terrascope.be/#/Developers/We
 Query products
 --------------
 
-For querying products, the :meth:`~terracatalogueclient.client.Catalogue.get_products` method can ne used.
+For querying products, the :meth:`~terracatalogueclient.client.Catalogue.get_products` method can be used.
 The collection identifier is the only mandatory parameter for this method.
 
 Get Sentinel-2 NDVI products for May 2020 with tile identifier 31UGS::
