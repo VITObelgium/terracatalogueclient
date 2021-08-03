@@ -222,6 +222,7 @@ class Catalogue:
                      orbitDirection: Optional[str] = None,
                      cloudCover: Optional[Union[Tuple[Union[float, int, None], Union[float, int, None]], float, int, str]] = None,
                      tileId: Optional[str] = None,
+                     productGroupId: Optional[str] = None,
                      publicationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
                      modificationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
                      accessedFrom: Optional[str] = None,
@@ -239,6 +240,7 @@ class Catalogue:
         :param orbitDirection: acquisition orbit direction
         :param cloudCover: maximum cloud cover percentage as int/float; cloud cover percentage interval as tuple; or number, set or interval of cloud cover percentages as a str
         :param tileId: tile identifier
+        :param productGroupId: string identifying the particular group to which a product belongs
         :param publicationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
         :param modificationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
         :param accessedFrom: information on the origin of the request
@@ -256,6 +258,7 @@ class Catalogue:
         if orbitDirection: kwargs['orbitDirection'] = orbitDirection
         if cloudCover: kwargs['cloudCover'] = cloudCover
         if tileId: kwargs['tileId'] = tileId
+        if productGroupId: kwargs['productGroupId'] = productGroupId
         if publicationDate: kwargs['publicationDate'] = publicationDate
         if modificationDate: kwargs['modificationDate'] = modificationDate
         if accessedFrom: kwargs['accessedFrom'] = accessedFrom

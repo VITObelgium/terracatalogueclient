@@ -131,6 +131,14 @@ class TestIntegration(unittest.TestCase):
                  'acquisitionParameters' in i]))
             self.assertEqual(tileId, acquisitionParameters['tileId'])
 
+    def test_get_products_productGroupId(self):
+        catalogue = Catalogue()
+        productGroupId = "S-America_NDVI"
+        products = list(catalogue.get_products("urn:ogc:def:EOP:VITO:VGT_S10", productGroupId=productGroupId, start="2001-01-01", end="2001-12-31"))
+        self.assertTrue(products)
+        for p in products:
+            self.assertEqual(productGroupId, p.properties["productInformation"]["productGroupId"])
+
     def test_get_products_publicationDate(self):
         catalogue = Catalogue()
         publicationDate = (dt.date(2021, 2, 20), dt.datetime(2021, 2, 22, 23, 59, 59))
@@ -150,12 +158,10 @@ class TestIntegration(unittest.TestCase):
             updated = _parse_date(p.properties['updated'])
             self.assertTrue(dt.datetime.combine(modificationDate[0], dt.datetime.min.time()) <= updated)
 
-
     def test_get_products_unsupported_parameter(self):
         catalogue = Catalogue()
         products = catalogue.get_products("urn:eop:VITO:CGS_S1_SLC_L1", test="test")
         self.assertRaises(SearchException, list, products)  # getting items from the generator and putting them in a list raises the error
-
 
     def test_get_product_count_invalid_parameter_values(self):
         catalogue = Catalogue()
