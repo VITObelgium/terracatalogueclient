@@ -215,7 +215,7 @@ class TestIntegration(unittest.TestCase):
         ))
         print(len(products))
         with tempfile.TemporaryDirectory() as tempdir:
-            catalogue.download_products(products, tempdir)
+            catalogue.download_products(products, tempdir, force=True)
             for product in products:
                 prod_dir = os.path.join(tempdir, product.title)
                 self.assertTrue(os.path.isdir(prod_dir))

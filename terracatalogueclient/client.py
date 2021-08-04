@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 import shapely.wkt as wkt
+import humanfriendly
 from typing import Iterator, List, Optional, Union, Dict, Iterable, Tuple, Callable, TypeVar
 
 from terracatalogueclient import auth, __title__, __version__
@@ -283,12 +284,35 @@ class Catalogue:
         else:
             raise SearchException(response)
 
-    def download_products(self, products: Iterable[Product], path: str):
+    def _get_total_file_size(self, products: Iterable[Product]) -> int:
+        """ Get the total file size of the given products.
+
+        :param products: iterable of products
+        :return: total file size in bytes
+        """
+        return sum(
+            [
+                product_file.length
+                for product in products
+                for product_file in product.data + product.related + product.alternates + product.previews
+            ]
+        )
+
+    def download_products(self, products: Iterable[Product], path: str, force=False):
         """ Download the given products. This will download all files belonging to the given products.
 
          :param products: iterable of products to download
          :param path: output directory to write files to
+         :param force: skip download confirmation
          """
+        if not force:
+            confirmed = False
+            while not confirmed:
+                in_confirmation = input(f"You are about to download {humanfriendly.format_size(self._get_total_file_size(products))}, do you want to continue? [Y/n] ")
+                if any(in_confirmation.lower() == s for s in ["y", ""]):
+                    confirmed = True
+                elif in_confirmation.lower() == "n":
+                    return
         for product in products:
             self.download_product(product, path)
 
