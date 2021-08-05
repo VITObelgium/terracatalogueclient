@@ -9,14 +9,11 @@ import humanfriendly
 from typing import Iterator, List, Optional, Union, Dict, Iterable, Tuple, Callable, TypeVar
 
 from terracatalogueclient import auth, __title__, __version__
+from terracatalogueclient.config import CatalogueConfig
 from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException, ParameterParserException, SearchException
 
 T = TypeVar('T')
 
-DEFAULT_CATALOGUE_URL = "https://services.terrascope.be/catalogue/"
-DEFAULT_OIDC_CLIENT_ID = "terracatalogueclient"
-DEFAULT_OIDC_TOKEN_ENDPOINT = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/token"
-DEFAULT_OIDC_AUTHORIZATION_ENDPOINT = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/auth"
 _DEFAULT_REQUEST_HEADERS = {"User-Agent": f"{__title__}/{__version__}"}
 
 
@@ -142,47 +139,40 @@ class Product:
 class Catalogue:
     """ Connection to a catalogue endpoint, which allows for searching and downloading EO products. """
 
-    def __init__(self, url: str = DEFAULT_CATALOGUE_URL):
+    def __init__(self, config: CatalogueConfig = None):
         """
-        :param url: base URL of the catalogue endpoint
+        :param config: catalogue configuration. If none is supplied, the default Terrascope config is used.
         """
-        self.base_url = url.rstrip("/") + "/"
+        self.config = config if config else CatalogueConfig.get_default_config()
         self._auth = auth.NoAuth()
 
-    def authenticate(
-            self,
-            authorization_url: str = DEFAULT_OIDC_AUTHORIZATION_ENDPOINT,
-            token_url: str = DEFAULT_OIDC_TOKEN_ENDPOINT,
-            client_id: str = DEFAULT_OIDC_CLIENT_ID
-    ) -> 'Catalogue':
+    def authenticate(self) -> 'Catalogue':
         """
         Authenticate to the catalogue in an interactive way. A browser window will open to handle the sign-in procedure.
 
-        :param authorization_url: OIDC authorization endpoint
-        :param token_url: OIDC token endpoint
-        :param client_id: OIDC client identifier
         :return: the catalogue object
         """
-        self._auth = auth.authorization_code_grant(authorization_url=authorization_url, token_url=token_url, client_id=client_id)
+        self._auth = auth.authorization_code_grant(
+            authorization_url=self.config.oidc_authorization_endpoint,
+            token_url=self.config.oidc_token_endpoint,
+            client_id=self.config.oidc_client_id
+        )
         return self
 
-    def authenticate_non_interactive(
-            self,
-            username: str,
-            password: str,
-            token_url: str = DEFAULT_OIDC_TOKEN_ENDPOINT,
-            client_id: str = DEFAULT_OIDC_CLIENT_ID
-    ) -> 'Catalogue':
+    def authenticate_non_interactive(self, username: str, password: str) -> 'Catalogue':
         """
         Authenticate to the catalogue in a non-interactive way. This requires you to pass your user credentials directly in the code.
 
         :param username: username
         :param password: password
-        :param token_url: OIDC token endpoint
-        :param client_id: OIDC client identifier
         :return: the catalogue object
         """
-        self._auth = auth.resource_owner_password_credentials_grant(username=username, password=password, client_id=client_id, token_url=token_url)
+        self._auth = auth.resource_owner_password_credentials_grant(
+            username=username,
+            password=password,
+            client_id=self.config.oidc_client_id,
+            token_url=self.config.oidc_token_endpoint
+        )
         return self
 
     def get_collections(self,
@@ -202,7 +192,7 @@ class Catalogue:
         :param platform: acquisition platform
         :param \**kwargs: additional query parameters can be provided as keyword arguments
         """
-        url = urljoin(self.base_url, "collections")
+        url = urljoin(self.config.catalogue_url, "collections")
         if start: kwargs['start'] = start
         if end: kwargs['end'] = end
         if bbox: kwargs['bbox'] = bbox
@@ -247,7 +237,7 @@ class Catalogue:
         :param accessedFrom: information on the origin of the request
         :param \**kwargs: additional query parameters can be provided as keyword arguments
         """
-        url = urljoin(self.base_url, "products")
+        url = urljoin(self.config.catalogue_url, "products")
         kwargs['collection'] = collection
         if start: kwargs['start'] = start
         if end: kwargs['end'] = end
@@ -274,7 +264,7 @@ class Catalogue:
         :param collection: collection to query
         :param \**kwargs: query parameters, check :meth:`~terracatalogueclient.client.Catalogue.get_products` for more information on query parameters
         """
-        url = urljoin(self.base_url, "products")
+        url = urljoin(self.config.catalogue_url, "products")
         kwargs['collection'] = collection
         self._convert_parameters(kwargs)
         response = requests.get(url, params=kwargs, headers=_DEFAULT_REQUEST_HEADERS)

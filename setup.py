@@ -21,5 +21,6 @@ setup(
     setup_requires=["pytest-runner"],
     extras_require={
         "docs": ["sphinx", "sphinx-autodoc-typehints"]
-    }
+    },
+    include_package_data=True
 )

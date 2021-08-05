@@ -222,7 +222,7 @@ class TestIntegration(unittest.TestCase):
                 for pf in product.data:
                     self.assertTrue(os.path.isfile(os.path.join(prod_dir, os.path.basename(pf.href))))
 
-    @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0, "Run manually to test donwload authorization.")
+    @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0, "Run manually to test download authorization.")
     def test_authorization_download(self):
         catalogue = Catalogue()  # unauthenticated catalogue instance
         catalogue_auth = Catalogue().authenticate()
