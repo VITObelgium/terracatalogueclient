@@ -1,6 +1,8 @@
 import requests
 import datetime as dt
 import os
+import boto3
+import botocore.session, botocore.handlers
 from urllib.parse import urljoin
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
@@ -72,9 +74,8 @@ class ProductFile:
     def __str__(self):
         return self.href
 
-    def is_downloadable(self):
-        href = self.href.lower()
-        return href.startswith("http")
+    def get_protocol(self):
+        return self.href[:self.href.find("://")].lower()
 
 
 class Product:
@@ -145,6 +146,7 @@ class Catalogue:
         """
         self.config = config if config else CatalogueConfig.get_default_config()
         self._auth = auth.NoAuth()
+        self.s3 = None
 
     def authenticate(self) -> 'Catalogue':
         """
@@ -320,26 +322,75 @@ class Catalogue:
         """ Download a single product file.
 
         :param product_file: product file to download
-        :param path: output directory to write files to
+        :param path: output directory to write the file to
         """
-        if product_file.is_downloadable():
-            if not self._is_authorized_to_download(product_file):
-                raise ProductDownloadException(f"You are not authorized to download this product. Make sure you are authenticated to the catalogue.")
-            # create output directory if it doesn't exists
-            if not os.path.exists(path):
-                os.makedirs(path)
-            filename = os.path.basename(product_file.href)
-            out_path = os.path.join(path, filename)
-            with requests.get(product_file.href, stream=True, auth=self._auth, allow_redirects=False, headers=_DEFAULT_REQUEST_HEADERS) as r:
-                r.raise_for_status()
-                with open(out_path, 'wb') as f:
-                    for chunk in r.iter_content():
-                        if chunk:
-                            f.write(chunk)
+        protocol = product_file.get_protocol()
+        if protocol.startswith("http"):
+            self._download_file_http(product_file, path)
+        elif protocol == "s3":
+            self._download_file_s3(product_file, path)
         else:
             raise ProductDownloadException(f"Could not download product file, {product_file.href} is not a downloadable path.")
 
-    def _is_authorized_to_download(self, product_file: ProductFile) -> bool:
+    def _download_file_http(self, product_file: ProductFile, path: str):
+        """ Download a single product file over HTTP.
+        Assumes that the href in the product file contains a valid HTTP address.
+
+        :param product_file: product file to download
+        :param path: output directory to write the file to
+        """
+        if not self._is_authorized_to_download_http(product_file):
+            raise ProductDownloadException(f"You are not authorized to download this product. Make sure you are authenticated to the catalogue.")
+        # create output directory if it doesn't exists
+        if not os.path.exists(path):
+            os.makedirs(path)
+        filename = os.path.basename(product_file.href)
+        out_path = os.path.join(path, filename)
+        with requests.get(product_file.href, stream=True, auth=self._auth, allow_redirects=False, headers=_DEFAULT_REQUEST_HEADERS) as r:
+            r.raise_for_status()
+            with open(out_path, 'wb') as f:
+                for chunk in r.iter_content():
+                    if chunk:
+                        f.write(chunk)
+
+    def _download_file_s3(self, product_file: ProductFile, path: str):
+        """ Download a single product over S3.
+        Assumes that the href in the product file contains a valid S3 link.
+
+        :param product_file: product file to download
+        :param path: output directory to write the file to
+        """
+        if not os.path.exists(path):
+            os.makedirs(path)
+        filename = os.path.basename(product_file.href)
+        out_path = os.path.join(path, filename)
+
+        if not self.s3:
+            self._init_s3_client()
+
+        _, tmp = product_file.href.split("://", 1)
+        bucket_name, key = tmp.split("/", 1)
+        bucket = self.s3.Bucket(bucket_name)
+        bucket.download_file(key, out_path)
+
+    def _init_s3_client(self):
+        """ Setup the S3 resource service client using the configuration values. """
+        # disable bucket name validation: https://creodias.eu/-/bucket-sharing-using-s3-bucket-policy
+        botocore_session = botocore.session.Session()
+        botocore_session.unregister('before-parameter-build.s3', botocore.handlers.validate_bucket_name)
+        boto3.setup_default_session(botocore_session=botocore_session)
+
+        if not (self.config.s3_endpoint_url and self.config.s3_access_key and self.config.s3_secret_key):
+            raise ProductDownloadException("Please provide S3 details in the configuration in order to use S3 as a download method.")
+
+        self.s3 = boto3.resource(
+            's3',
+            endpoint_url=self.config.s3_endpoint_url,
+            aws_access_key_id=self.config.s3_access_key,
+            aws_secret_access_key=self.config.s3_secret_key
+        )
+
+    def _is_authorized_to_download_http(self, product_file: ProductFile) -> bool:
         """ Check if the authenticated user has authorization to download the product file.
         If the user is not authenticated, a redirect will take place.
 

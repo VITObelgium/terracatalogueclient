@@ -230,5 +230,5 @@ class TestIntegration(unittest.TestCase):
         title = "S2A_20200101T142731_19HBV_FAPAR_20M_V200"
         products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title=title))
         product = products[0]
-        self.assertFalse(catalogue._is_authorized_to_download(product.data[0]))  # unauthenticated download not possible
-        self.assertTrue(catalogue_auth._is_authorized_to_download(product.data[0]))  # authenticated download possible
+        self.assertFalse(catalogue._is_authorized_to_download_http(product.data[0]))  # unauthenticated download not possible
+        self.assertTrue(catalogue_auth._is_authorized_to_download_http(product.data[0]))  # authenticated download possible

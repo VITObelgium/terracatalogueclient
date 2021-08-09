@@ -5,3 +5,4 @@ shapely
 requests
 requests-auth>=5.3.0
 humanfriendly
+boto3
