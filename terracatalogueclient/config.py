@@ -3,8 +3,12 @@ import pkgutil
 
 
 class CatalogueConfig:
+    """ Catalogue configuration object. """
 
     def __init__(self, config: configparser.ConfigParser):
+        """
+        :param config: configuration
+        """
         self.config = config
 
         # Catalogue
@@ -29,7 +33,7 @@ class CatalogueConfig:
     @staticmethod
     def from_file(path: str) -> 'CatalogueConfig':
         """
-        Load a catalogue configuration file.
+        Get a catalogue configuration object from a configuration file.
 
         :param path: path of the catalogue .ini configuration file
         :return: CatalogueConfig object

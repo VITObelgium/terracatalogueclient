@@ -3,6 +3,25 @@ Usage
 
 On this page, some code examples are listed to get you started.
 
+Catalogue configuration
+-----------------------
+When you create a catalogue object, you can provide a configuration file with the details of the catalogue you wish to connect to::
+
+    from terracatalogueclient import Catalogue
+    from terracatalogueclient.config import CatalogueConfig
+
+    config = CatalogueConfig.from_file("/path/to/configuration.ini")
+    catalogue = Catalogue(config)  # catalogue with custom configuration
+
+Check the :obj:`~terracatalogueclient.config.CatalogueConfig` API for more information on how to load a configuration file. If no configuration is supplied, the default Terrascope configuration will be used::
+
+    from terracatalogueclient import Catalogue
+    catatalogue = Catalogue()  # catalogue with default Terrascope configuration
+
+A configuration file has the following structure. The default configuration is used as an example:
+
+.. literalinclude:: ../terracatalogueclient/resources/terrascope.ini
+    :language: ini
 
 Query collections
 -----------------
@@ -96,3 +115,22 @@ Download products
         # href of the product file now contains the local path
         local_paths = [pf.href for p in products for pf in p.data]
 
+Download methods
+^^^^^^^^^^^^^^^^
+A catalogue may support multiple data access methods. Based on the ``accessedFrom`` search parameter supplied when querying products, the product file links will be provided for your prefered access method.
+The default value is HTTP, but other options are S3 and MEP (local paths). This data access method will be used later when downloading the products.
+
+.. note::
+    The Terrascope catalogue doesn't support the S3 data access method.
+
+For downloading products over S3, make sure to use the ``accessedFrom="S3"`` parameter in the product search::
+
+    products = catalogue.get_products(
+        collection=collection,
+        start="2021-01-01",
+        end="2021-02-01",
+        tileId="31UES",
+        accessedFrom="S3"
+    )
+    # download automatically selects the access method specified when querying the products
+    catalogue.download_products(products, path)
