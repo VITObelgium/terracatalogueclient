@@ -314,9 +314,8 @@ class Catalogue:
         :param product: product to download
         :param path: output directory to write files to
         """
-        product_dir = os.path.join(path, product.title)
         for product_file in product.data + product.related + product.alternates + product.previews:
-            self.download_file(product_file, product_dir)
+            self.download_file(product_file, self._get_product_dir(path, product))
 
     def download_file(self, product_file: ProductFile, path: str):
         """ Download a single product file.
