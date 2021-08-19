@@ -509,6 +509,13 @@ class Catalogue:
         category = link.get('category', None)
         return ProductFile(href, length, title, type, category)
 
+    @staticmethod
+    def _get_product_dir(path: str, product: Product):
+        try:
+            return os.path.join(path, product.id[product.id.rindex(':')+1:])
+        except ValueError:
+            return os.path.join(path, product.id)
+
 
 def _parse_date(datestr: str) -> dt.datetime:
     # remove the milliseconds

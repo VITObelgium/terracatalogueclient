@@ -91,3 +91,21 @@ class TestClient(unittest.TestCase):
     def test_parse_date(self):
         self.assertEqual(dt.datetime(2021, 4, 16, 16, 15, 14), terracatalogueclient.client._parse_date("2021-04-16T16:15:14.243Z"))
         self.assertEqual(dt.datetime(2020, 2, 20, 18, 12, 38), terracatalogueclient.client._parse_date("2020-02-20T18:12:38Z"))
+
+    def test_get_product_dir(self):
+
+        product = terracatalogueclient.Product(
+            id='urn:eop:VITO:TERRASCOPE_S2_NDVI_V2:S2A_20150704T101006_32TML_NDVI_10M_V200',
+            title='S2A_20150704T101006_32TML_NDVI_10M_V200',
+            geometry=None, bbox=None, beginningDateTime=None, endingDateTime=None, properties=None, data=None,
+            related=None, previews=None, alternates=None)
+        self.assertEqual('/tmp/S2A_20150704T101006_32TML_NDVI_10M_V200',
+                         Catalogue._get_product_dir('/tmp/', product))
+
+        product = terracatalogueclient.Product(
+            id='VI_20161001T092022_S2A_T34SDG-010m_V100_FAPAR',
+            title='Vegetation Indices 2017-ongoing (raster 010m) - version 1 : FAPAR T34SDG 20161001T092022',
+            geometry=None, bbox=None, beginningDateTime=None, endingDateTime=None, properties=None, data=None,
+            related=None, previews=None, alternates=None)
+        self.assertEqual('/tmp/VI_20161001T092022_S2A_T34SDG-010m_V100_FAPAR',
+                         Catalogue._get_product_dir('/tmp/', product))
