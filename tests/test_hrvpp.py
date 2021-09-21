@@ -16,14 +16,14 @@ class TestHRVPP(unittest.TestCase):
         catalogue = Catalogue(self.config_hrvpp)
         collections = list(catalogue.get_collections())
         collection_ids = [collection.id for collection in collections]
-        self.assertIn("copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r00", collection_ids)
+        self.assertIn("copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r01", collection_ids)
 
     def test_get_products(self):
         catalogue = Catalogue(self.config_hrvpp)
         tileId = "31UGS"
         products = list(
             catalogue.get_products(
-                "copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r00",
+                "copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r01",
                 tileId=tileId,
                 start="2021-01-01",
                 end="2021-01-31")
@@ -35,7 +35,7 @@ class TestHRVPP(unittest.TestCase):
         catalogue = Catalogue(self.config_hrvpp).authenticate()
         tileId = "31UGS"
         products = catalogue.get_products(
-            "copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r00",
+            "copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r01",
             tileId=tileId,
             start="2021-01-01",
             end="2021-01-31",
