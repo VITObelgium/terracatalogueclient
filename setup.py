@@ -15,12 +15,12 @@ setup(
     description="Client for the Terrascope EO catalogue",
     url="https://github.com/VITObelgium/terracatalogueclient",
     packages=find_packages(),
+    package_data={"": ["resources/*"]},
     install_requires=["requests", "requests-auth>=5.3.0", "shapely", "humanfriendly", "boto3"],
     test_suite="tests",
     tests_require=["pytest"],
     setup_requires=["pytest-runner"],
     extras_require={
         "docs": ["sphinx", "sphinx-autodoc-typehints"]
-    },
-    include_package_data=True
+    }
 )
