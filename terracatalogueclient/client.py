@@ -287,6 +287,7 @@ class Catalogue:
                 product_file.length
                 for product in products
                 for product_file in product.data + product.related + product.alternates + product.previews
+                if product_file.length is not None
             ]
         )
 

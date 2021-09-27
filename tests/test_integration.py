@@ -142,7 +142,7 @@ class TestIntegration(unittest.TestCase):
     def test_get_products_publicationDate(self):
         catalogue = Catalogue()
         publicationDate = (dt.date(2021, 2, 20), dt.datetime(2021, 2, 22, 23, 59, 59))
-        products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_NDVI_V2", publicationDate=publicationDate))
+        products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S1_SLC_COHERENCE_V1", publicationDate=publicationDate))
         self.assertTrue(products)
         for p in products:
             published = _parse_date(p.properties['published'])
