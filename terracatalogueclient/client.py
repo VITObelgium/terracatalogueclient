@@ -297,6 +297,7 @@ class Catalogue:
          :param path: output directory to write files to
          :param force: skip download confirmation
          """
+        products = list(products)
         if not force:
             confirmed = False
             while not confirmed:
