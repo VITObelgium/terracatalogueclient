@@ -3,7 +3,7 @@ import datetime as dt
 import os
 import boto3
 import botocore.session, botocore.handlers
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse, parse_qs
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 import shapely.wkt as wkt
@@ -440,14 +440,33 @@ class Catalogue:
         return params
 
     @staticmethod
+    def _can_get_all_features(response: dict) -> bool:
+        """
+        Check if all features can be retrieved using pagination.
+        If too many results are found for the query, it may not be possible due to a limitation on the pagination depth.
+        :param response: FeatureCollection as a dict
+        :return: boolean indicating whether all features can be retrieved
+        """
+        page_size = response['itemsPerPage']
+        total_results = response['totalResults']
+
+        if 'last' in response['properties']['links'] and len(response['properties']['links']['last']) == 1:
+            last_href = response['properties']['links']['last'][0]['href']
+            last_start_index = int(parse_qs(urlparse(last_href).query)['startIndex'][0])
+
+            return total_results <= last_start_index + page_size - 1
+        else:
+            return total_results <= page_size
+
+    @staticmethod
     def _get_paginated_feature_generator(url: str, url_params: dict, builder) -> Iterator:
         response = requests.get(url, params=url_params, headers=_DEFAULT_REQUEST_HEADERS)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
-            if response_json['totalResults'] > 10000:
+            if not Catalogue._can_get_all_features(response_json):
                 raise TooManyResultsException(
-                    f"Too many results: found {response_json['totalResults']} (max 10000 allowed). "
+                    f"Too many results: {response_json['totalResults']} found. "
                     f"Please narrow down your search.")
 
             for f in response_json['features']:
