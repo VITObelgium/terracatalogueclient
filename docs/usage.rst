@@ -77,7 +77,7 @@ you can wrap the iterator in a list, but this will also load all results in memo
 
 
 .. note::
-    If your product query has more than 10,000 results, a :obj:`~terracatalogueclient.exceptions.TooManyResultsException` will be raised.
+    If your product query has more results than supported by the pagination of the catalogue, a :obj:`~terracatalogueclient.exceptions.TooManyResultsException` will be raised.
 
 There is a separate method to get product counts: :meth:`~terracatalogueclient.client.Catalogue.get_product_count`. This method is much more efficient than first retrieving all products and then counting them.
 Here is a query to get the number of products per collection for 2019::

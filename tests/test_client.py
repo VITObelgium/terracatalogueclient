@@ -109,3 +109,35 @@ class TestClient(unittest.TestCase):
             related=None, previews=None, alternates=None)
         self.assertEqual('/tmp/VI_20161001T092022_S2A_T34SDG-010m_V100_FAPAR',
                          Catalogue._get_product_dir('/tmp/', product))
+
+    def test_can_get_all_features(self):
+        def get_response(total_results, items_per_page, last_href):
+            r = {
+                "totalResults": total_results,
+                "itemsPerPage": items_per_page,
+                "properties": {
+                    "links": {
+                        "last": [
+                            {
+                                "href": last_href
+                            }
+                        ]
+                    }
+                }
+            }
+            return r
+
+        # Too many results, cannot get all products
+        response = get_response(375433, 100, "https://services.terrascope.be/catalogue/products?"
+                                             "collection=urn:eop:VITO:TERRASCOPE_S2_TOC_V2&startIndex=99901")
+        self.assertFalse(terracatalogueclient.Catalogue._can_get_all_features(response))
+
+        # All results on one page
+        response = get_response(41, 41, "https://services.terrascope.be/catalogue/products?"
+                                        "collection=urn:eop:VITO:TERRASCOPE_S5P_L3_NO2_TM_V1&startIndex=1")
+        self.assertTrue(terracatalogueclient.Catalogue._can_get_all_features(response))
+
+        # Can get all results over multiple pages
+        response = get_response(26445, 100, "https://services.terrascope.be/catalogue/products?"
+                                            "collection=urn:eop:VITO:COP_DEM_GLO_30M_COG&startIndex=26401")
+        self.assertTrue(terracatalogueclient.Catalogue._can_get_all_features(response))

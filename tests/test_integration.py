@@ -44,7 +44,7 @@ class TestIntegration(unittest.TestCase):
 
     def test_get_too_many_products(self):
         catalogue = Catalogue()
-        products = catalogue.get_products("urn:eop:VITO:CGS_S1_GRD_L1")
+        products = catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_TOC_V2")
         # exception is raised only when elements of the generator are actually accessed
         # converting the generator to a list will do this
         self.assertRaises(TooManyResultsException, list, products)
