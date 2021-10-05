@@ -268,6 +268,7 @@ class Catalogue:
         """
         url = urljoin(self.config.catalogue_url, "products")
         kwargs['collection'] = collection
+        kwargs['count'] = 0
         self._convert_parameters(kwargs)
         response = requests.get(url, params=kwargs, headers=_DEFAULT_REQUEST_HEADERS)
         if response.status_code == requests.codes.ok:
