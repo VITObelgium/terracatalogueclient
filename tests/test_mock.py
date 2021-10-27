@@ -113,14 +113,12 @@ class TestMock(TestCase):
             # download all files
             catalogue.download_products([product], tmp_dir, force=True)
             self.assertEqual(4, mock_download_file.call_count)
-            call_args = [call_args.args for call_args in mock_download_file.call_args_list]
             for pf in product.data + product.related + product.previews + product.alternates:
-                self.assertIn((pf, download_dir), call_args)
+                self.assertIn(((pf, download_dir),), mock_download_file.call_args_list)
             mock_download_file.reset_mock()
 
             # combine file types
             catalogue.download_product(product, tmp_dir, ProductFileType.DATA | ProductFileType.RELATED)
             self.assertEqual(2, mock_download_file.call_count)
-            call_args = [call_args.args for call_args in mock_download_file.call_args_list]
             for pf in product.data + product.related:
-                self.assertIn((pf, download_dir), call_args)
+                self.assertIn(((pf, download_dir),), mock_download_file.call_args_list)
