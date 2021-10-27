@@ -134,3 +134,16 @@ For downloading products over S3, make sure to use the ``accessedFrom="S3"`` par
     )
     # download automatically selects the access method specified when querying the products
     catalogue.download_products(products, path)
+
+Filter files
+^^^^^^^^^^^^
+It is possible to filter out the files that are of interest for you. By default, all product files will be downloaded.
+The filtering is handled by the ``file_types`` parameter of the download method.
+This parameter expects an enum flag of type :obj:`~terracatalogueclient.client.ProductFileType`.
+You can combine multiple of these flags to download several types of product files. This is done with the ``|`` operator.
+
+The following example will download the data files and related resources (eg. cloud mask):
+
+>>> catalogue.download_product(product, path, ProductFileType.DATA | ProductFileType.RELATED)
+
+Check the :doc:`api` for a full overview of the download methods (:meth:`~terracatalogueclient.client.Catalogue.download_product` or :meth:`~terracatalogueclient.client.Catalogue.download_products`) and the :obj:`~terracatalogueclient.client.ProductFileType` enum flag.

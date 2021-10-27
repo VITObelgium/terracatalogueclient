@@ -8,6 +8,7 @@ from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 import shapely.wkt as wkt
 import humanfriendly
+import enum
 from typing import Iterator, List, Optional, Union, Dict, Iterable, Tuple, Callable, TypeVar
 
 from terracatalogueclient import auth, __title__, __version__
@@ -41,6 +42,17 @@ class Collection:
 
     def __str__(self):
         return self.id
+
+
+class ProductFileType(enum.Flag):
+    """
+    Enum flag to indicate the type of a product file.
+    """
+    DATA = enum.auto()  #: Data files
+    RELATED = enum.auto()  #: Related files (eg. cloud mask)
+    PREVIEWS = enum.auto()  #: Previews
+    ALTERNATES = enum.auto()  #: Metadata description in an alternative format
+    ALL = DATA | RELATED | PREVIEWS | ALTERNATES  #: Matches all types of files
 
 
 class ProductFile:
@@ -277,47 +289,75 @@ class Catalogue:
         else:
             raise SearchException(response)
 
-    def _get_total_file_size(self, products: Iterable[Product]) -> int:
+    def _get_total_file_size(self, products: Iterable[Product], file_types: ProductFileType) -> int:
         """ Get the total file size of the given products.
 
         :param products: iterable of products
+        :param file_types: product file types
         :return: total file size in bytes
         """
         return sum(
             [
                 product_file.length
                 for product in products
-                for product_file in product.data + product.related + product.alternates + product.previews
+                for product_file in self._get_product_files_matching_file_types(product, file_types)
                 if product_file.length is not None
             ]
         )
 
-    def download_products(self, products: Iterable[Product], path: str, force=False):
-        """ Download the given products. This will download all files belonging to the given products.
+    def _get_product_files_matching_file_types(self, product: Product, file_types: ProductFileType) -> List[ProductFile]:
+        """
+        Get the product files matching the given file types.
+
+        :param product: product
+        :param file_types: product file types
+        :return: product files matching the given file types
+        """
+        files = []
+        if ProductFileType.DATA in file_types:
+            files += product.data
+        if ProductFileType.RELATED in file_types:
+            files += product.related
+        if ProductFileType.PREVIEWS in file_types:
+            files += product.previews
+        if ProductFileType.ALTERNATES in file_types:
+            files += product.alternates
+
+        return files
+
+    def download_products(self,
+                          products: Iterable[Product],
+                          path: str,
+                          file_types: ProductFileType = ProductFileType.ALL,
+                          force: bool = False):
+        """ Download the given products.
+        This will download the files belonging to the given products matching the provided file types.
 
          :param products: iterable of products to download
          :param path: output directory to write files to
+         :param file_types: type of product files to download
          :param force: skip download confirmation
          """
         products = list(products)
         if not force:
             confirmed = False
             while not confirmed:
-                in_confirmation = input(f"You are about to download {humanfriendly.format_size(self._get_total_file_size(products))}, do you want to continue? [Y/n] ")
+                in_confirmation = input(f"You are about to download {humanfriendly.format_size(self._get_total_file_size(products, file_types))}, do you want to continue? [Y/n] ")
                 if any(in_confirmation.lower() == s for s in ["y", ""]):
                     confirmed = True
                 elif in_confirmation.lower() == "n":
                     return
         for product in products:
-            self.download_product(product, path)
+            self.download_product(product, path, file_types)
 
-    def download_product(self, product: Product, path: str):
+    def download_product(self, product: Product, path: str, file_types: ProductFileType = ProductFileType.ALL):
         """ Download a single product. This will download all files belonging to the given product.
 
         :param product: product to download
         :param path: output directory to write files to
+        :param file_types: type of product files to download
         """
-        for product_file in product.data + product.related + product.alternates + product.previews:
+        for product_file in self._get_product_files_matching_file_types(product, file_types):
             self.download_file(product_file, self._get_product_dir(path, product))
 
     def download_file(self, product_file: ProductFile, path: str):
