@@ -41,7 +41,10 @@ html_last_updated_fmt = "%Y/%m/%d"
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_autodoc_typehints'
+    'sphinx_autodoc_typehints',
+    'sphinx.ext.viewcode',
+    'sphinx_copybutton',
+    'sphinx_design'
 ]
 
 autodoc_preserve_defaults = True
@@ -61,25 +64,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'furo'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-
-# Custom sidebar templates, must be a dictionary that maps document names
-# to template names.
-#
-# This is required for the alabaster theme
-# refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-# html_sidebars = {
-#     '**': [
-#         'about.html',
-#         'localtoc.html',
-#         'relations.html',  # needs 'show_related': True theme option to display
-#         'searchbox.html',
-#         'hacks.html',
-#     ]
-# }

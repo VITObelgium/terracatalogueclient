@@ -330,8 +330,7 @@ class Catalogue:
                           path: str,
                           file_types: ProductFileType = ProductFileType.ALL,
                           force: bool = False):
-        """ Download the given products.
-        This will download the files belonging to the given products matching the provided file types.
+        """ Download the given products. This will download the files belonging to the given products matching the provided file types.
 
          :param products: iterable of products to download
          :param path: output directory to write files to

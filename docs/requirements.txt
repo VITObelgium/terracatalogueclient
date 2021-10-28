@@ -1,6 +1,8 @@
-# GitHub Action builds with Sphinx 2.4.4
-sphinx-rtd-theme
+furo
 sphinx-autodoc-typehints
+sphinx-copybutton
+sphinx-design
+
 shapely
 requests
 requests-auth>=5.3.0
