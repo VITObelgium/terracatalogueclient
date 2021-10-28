@@ -20,9 +20,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - uses: ammaraskar/sphinx-action@master
-        with:
-          docs-folder: "docs/"
+      - name: Build HTML docs
+        run: docker run --rm -v $GITHUB_WORKSPACE/docs:/docs sphinxdoc/sphinx sh -c "pip3 install -r /docs/requirements.txt; make html"
 
       # Create an artifact of the HTML output
       - uses: actions/upload-artifact@v2
