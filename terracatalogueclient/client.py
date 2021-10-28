@@ -391,7 +391,7 @@ class Catalogue:
         with requests.get(product_file.href, stream=True, auth=self._auth, allow_redirects=False, headers=_DEFAULT_REQUEST_HEADERS) as r:
             r.raise_for_status()
             with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
+                for chunk in r.iter_content(chunk_size=self.config.http_download_chunk_size):
                     if chunk:
                         f.write(chunk)
 

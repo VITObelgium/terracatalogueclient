@@ -19,6 +19,9 @@ class CatalogueConfig:
         self.oidc_token_endpoint = config.get("Auth", "TokenEndpoint")
         self.oidc_authorization_endpoint = config.get("Auth", "AuthorizationEndpoint")
 
+        # HTTP
+        self.http_download_chunk_size = config.getint("HTTP", "ChunkSize")
+
         # S3
         self.s3_access_key = config.get("S3", "AccessKey")
         self.s3_secret_key = config.get("S3", "SecretKey")
@@ -39,5 +42,8 @@ class CatalogueConfig:
         :return: CatalogueConfig object
         """
         config = configparser.ConfigParser()
+        # read the default config first to populate default values
+        config.read_string(pkgutil.get_data(__name__, "resources/terrascope.ini").decode())
+        # apply values from custom config
         config.read(path)
         return CatalogueConfig(config)
