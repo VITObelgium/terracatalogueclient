@@ -26,6 +26,8 @@ class Collection:
 
     :ivar id: collection identifier
     :vartype id: str
+    :ivar geojson: GeoJSON representation of the collection
+    :vartype geojson: dict
     :ivar geometry: collection geometry as a Shapely geometry
     :vartype geometry: BaseGeometry
     :ivar bbox: bounding box
@@ -34,8 +36,9 @@ class Collection:
     :vartype properties: dict
     """
 
-    def __init__(self, id: str, geometry: BaseGeometry, bbox: List[float], properties: dict):
+    def __init__(self, id: str, geojson: dict, geometry: BaseGeometry, bbox: List[float], properties: dict):
         self.id = id
+        self.geojson = geojson
         self.geometry = geometry
         self.bbox = bbox
         self.properties = properties
@@ -98,6 +101,8 @@ class Product:
     :vartype id: str
     :ivar title: product title
     :vartype title: str
+    :ivar geojson: GeoJSON representation of the product
+    :vartype geojson: dict
     :ivar geometry: product geometry as a Shapely geometry
     :vartype geometry: BaseGeometry
     :ivar bbox: bounding box
@@ -121,6 +126,7 @@ class Product:
     def __init__(self,
                  id: str,
                  title: str,
+                 geojson: dict,
                  geometry: BaseGeometry,
                  bbox: List[float],
                  beginningDateTime : Optional[dt.datetime],
@@ -132,6 +138,7 @@ class Product:
                  alternates: List[ProductFile]):
         self.id = id
         self.title = title
+        self.geojson = geojson
         self.geometry = geometry
         self.bbox = bbox
 
@@ -231,6 +238,7 @@ class Catalogue:
                      publicationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
                      modificationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
                      accessedFrom: Optional[str] = None,
+                     limit: Optional[int] = None,
                      **kwargs) -> Iterator[Product]:
         """ Get the products matching the query.
 
@@ -249,6 +257,7 @@ class Catalogue:
         :param publicationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
         :param modificationDate: date of publication, as a date range in a date/datetime tuple (you can use None to have an unbounded interval) or as a str
         :param accessedFrom: information on the origin of the request
+        :param limit: limit the number of requested products
         :param \**kwargs: additional query parameters can be provided as keyword arguments
         """
         url = urljoin(self.config.catalogue_url, "products")
@@ -267,6 +276,7 @@ class Catalogue:
         if publicationDate: kwargs['publicationDate'] = publicationDate
         if modificationDate: kwargs['modificationDate'] = modificationDate
         if accessedFrom: kwargs['accessedFrom'] = accessedFrom
+        if limit: kwargs['limit'] = limit
         self._convert_parameters(kwargs)
         return self._get_paginated_feature_generator(url, kwargs, self._build_product)
 
@@ -480,37 +490,45 @@ class Catalogue:
         return params
 
     @staticmethod
-    def _can_get_all_features(response: dict) -> bool:
+    def _can_get_all_features(response: dict, limit: Optional[int] = None) -> bool:
         """
         Check if all features can be retrieved using pagination.
         If too many results are found for the query, it may not be possible due to a limitation on the pagination depth.
         :param response: FeatureCollection as a dict
+        :param limit: limit the number of requested features
         :return: boolean indicating whether all features can be retrieved
         """
         page_size = response['itemsPerPage']
         total_results = response['totalResults']
+        requested_results = total_results if limit is None else min(limit, total_results)
 
         if 'last' in response['properties']['links'] and len(response['properties']['links']['last']) == 1:
             last_href = response['properties']['links']['last'][0]['href']
             last_start_index = int(parse_qs(urlparse(last_href).query)['startIndex'][0])
 
-            return total_results <= last_start_index + page_size - 1
+            return requested_results <= last_start_index + page_size - 1
         else:
-            return total_results <= page_size
+            return requested_results <= page_size
 
     @staticmethod
     def _get_paginated_feature_generator(url: str, url_params: dict, builder) -> Iterator:
+        limit = url_params.pop("limit", None)
+        feature_count = 0
+
         response = requests.get(url, params=url_params, headers=_DEFAULT_REQUEST_HEADERS)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
-            if not Catalogue._can_get_all_features(response_json):
+            if not Catalogue._can_get_all_features(response_json, limit):
                 raise TooManyResultsException(
                     f"Too many results: {response_json['totalResults']} found. "
                     f"Please narrow down your search.")
 
             for f in response_json['features']:
+                feature_count += 1
                 yield builder(f)
+                if limit is not None and feature_count >= limit:
+                    return
 
             while 'next' in response_json['properties']['links']:
                 url = response_json['properties']['links']['next'][0]['href']
@@ -519,7 +537,10 @@ class Catalogue:
                 if response.status_code == requests.codes.ok:
                     response_json = response.json()
                     for f in response_json['features']:
+                        feature_count += 1
                         yield builder(f)
+                        if limit is not None and feature_count >= limit:
+                            return
                 else:
                     response.raise_for_status()
         else:
@@ -530,7 +551,7 @@ class Catalogue:
         """ Build collection object from the JSON response.
         :param feature: feature as a JSON dict
         """
-        return Collection(feature['id'], shape(feature['geometry']), feature['bbox'], feature['properties'])
+        return Collection(feature['id'], feature, shape(feature['geometry']), feature['bbox'], feature['properties'])
 
     @staticmethod
     def _build_product(feature: dict) -> Product:
@@ -554,7 +575,7 @@ class Catalogue:
         previews = Catalogue._build_files(links['previews']) if 'previews' in links else []
         alternates = Catalogue._build_files(links['alternates']) if 'alternates' in links else []
 
-        return Product(id, title, geometry, bbox, beginningDateTime, endingDateTime, feature['properties'], data, related, previews, alternates)
+        return Product(id, title, feature, geometry, bbox, beginningDateTime, endingDateTime, feature['properties'], data, related, previews, alternates)
 
     @staticmethod
     def _build_files(links: list) -> List[ProductFile]:

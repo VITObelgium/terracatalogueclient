@@ -78,6 +78,7 @@ class TestMock(TestCase):
             "urn:eop:VITO:TERRASCOPE_S2_NDVI_V2:S2A_20150704T101006_32TML_NDVI_10M_V200",
             "S2A_20150704T101006_32TML_NDVI_10M_V200",
             None,
+            None,
             [8.2009294, 40.5584724, 9.1170316, 41.5517851],
             _parse_date("2015-07-04T10:10:06.027Z"),
             _parse_date("2015-07-04T10:10:06.027Z"),

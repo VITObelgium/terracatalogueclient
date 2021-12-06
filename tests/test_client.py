@@ -96,7 +96,7 @@ class TestClient(unittest.TestCase):
 
         product = terracatalogueclient.Product(
             id='urn:eop:VITO:TERRASCOPE_S2_NDVI_V2:S2A_20150704T101006_32TML_NDVI_10M_V200',
-            title='S2A_20150704T101006_32TML_NDVI_10M_V200',
+            title='S2A_20150704T101006_32TML_NDVI_10M_V200', geojson=None,
             geometry=None, bbox=None, beginningDateTime=None, endingDateTime=None, properties=None, data=None,
             related=None, previews=None, alternates=None)
         self.assertEqual('/tmp/S2A_20150704T101006_32TML_NDVI_10M_V200',
@@ -105,8 +105,8 @@ class TestClient(unittest.TestCase):
         product = terracatalogueclient.Product(
             id='VI_20161001T092022_S2A_T34SDG-010m_V100_FAPAR',
             title='Vegetation Indices 2017-ongoing (raster 010m) - version 1 : FAPAR T34SDG 20161001T092022',
-            geometry=None, bbox=None, beginningDateTime=None, endingDateTime=None, properties=None, data=None,
-            related=None, previews=None, alternates=None)
+            geojson=None, geometry=None, bbox=None, beginningDateTime=None, endingDateTime=None, properties=None,
+            data=None, related=None, previews=None, alternates=None)
         self.assertEqual('/tmp/VI_20161001T092022_S2A_T34SDG-010m_V100_FAPAR',
                          Catalogue._get_product_dir('/tmp/', product))
 

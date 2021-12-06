@@ -201,6 +201,25 @@ class TestIntegration(unittest.TestCase):
             catalogue.download_file(product.alternates[0], dir)
             self.assertTrue(os.path.isfile(os.path.join(dir, f"{title}.xml")))
 
+    def test_get_products_limit(self):
+        catalogue = Catalogue()
+        # expect the number of results to be the same as the limit
+        self.assertEqual(10, len(list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", limit=10))))
+        self.assertEqual(220, len(list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", limit=220))))
+
+        # if the limit is over the supported number by the pagination of the backend,
+        # assert a TooManyResults exception is raised
+        self.assertRaises(
+            TooManyResultsException,
+            list, catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", limit=10_000_000)
+        )
+
+        # if the query has fewer results than the limit, only expect the actual number of results
+        self.assertEqual(
+            1,
+            len(list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title="S2A_20200101T142731_19HBV_FAPAR_20M_V200", limit=220)))
+        )
+
     # Manual tests: set the MANUAL_TESTS environment variable to 1 to run these tests.
 
     @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0, "Run manually to test download with authentication.")
