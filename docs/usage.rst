@@ -16,7 +16,7 @@ When you create a catalogue object, you can provide a configuration file with th
 Check the :obj:`~terracatalogueclient.config.CatalogueConfig` API for more information on how to load a configuration file. If no configuration is supplied, the default Terrascope configuration will be used::
 
     from terracatalogueclient import Catalogue
-    catatalogue = Catalogue()  # catalogue with default Terrascope configuration
+    catalogue = Catalogue()  # catalogue with default Terrascope configuration
 
 A configuration file has the following structure. The default configuration is used as an example:
 
@@ -29,8 +29,8 @@ Query collections
 Get all available collections and print the collection identifiers and their titles::
 
     from terracatalogueclient import Catalogue
-    catatalogue = Catalogue()
-    collections = catatalogue.get_collections()
+    catalogue = Catalogue()
+    collections = catalogue.get_collections()
     for c in collections:
         print(f"{c.id} - {c.properties['title']}")
 
@@ -117,7 +117,7 @@ Download products
 
 Download methods
 ^^^^^^^^^^^^^^^^
-A catalogue may support multiple data access methods. Based on the ``accessedFrom`` search parameter supplied when querying products, the product file links will be provided for your prefered access method.
+A catalogue may support multiple data access methods. Based on the ``accessedFrom`` search parameter supplied when querying products, the product file links will be provided for your preferred access method.
 The default value is HTTP, but other options are S3 and MEP (local paths). This data access method will be used later when downloading the products.
 
 .. note::
