@@ -16,8 +16,11 @@ class CatalogueConfig:
 
         # Auth
         self.oidc_client_id = config.get("Auth", "ClientId")
+        self.oidc_client_secret = config.get("Auth", "ClientSecret")
         self.oidc_token_endpoint = config.get("Auth", "TokenEndpoint")
         self.oidc_authorization_endpoint = config.get("Auth", "AuthorizationEndpoint")
+        self.oidc_interactive_supported = config.getboolean("Auth", "InteractiveSupported")
+        self.oidc_non_interactive_supported = config.getboolean("Auth", "NonInteractiveSupported")
 
         # HTTP
         self.http_download_chunk_size = config.getint("HTTP", "ChunkSize")

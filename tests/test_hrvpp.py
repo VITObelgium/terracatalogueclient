@@ -3,6 +3,7 @@ import unittest
 import tempfile
 from terracatalogueclient import Catalogue
 from terracatalogueclient.config import CatalogueConfig
+from terracatalogueclient.exceptions import ProductDownloadException
 
 test_resource_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resources")
 
@@ -30,9 +31,16 @@ class TestHRVPP(unittest.TestCase):
         )
         self.assertTrue(products)  # check if list is not empty
 
-    @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0, "Run manually to test download with authentication.")
-    def test_download_http(self):
-        catalogue = Catalogue(self.config_hrvpp).authenticate()
+    def test_download_interactive(self):
+        with self.assertRaises(ProductDownloadException):
+            Catalogue(self.config_hrvpp).authenticate()
+
+    @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0 or 'WEKEO_USERNAME' not in os.environ or 'WEKEO_PASSWORD' not in os.environ,
+                     "Run manually to test download with authentication. Provide WekEO credentials as WEKEO_USERNAME and WEKEO_PASSWORD.")
+    def test_download_non_interactive(self):
+        # note that this will only work when production download service uses WekEO IdP for authentication
+        catalogue = Catalogue(self.config_hrvpp).authenticate_non_interactive(os.getenv("WEKEO_USERNAME"),
+                                                                              os.getenv("WEKEO_PASSWORD"))
         tileId = "31UGS"
         products = catalogue.get_products(
             "copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r01",
@@ -59,7 +67,7 @@ class TestHRVPP(unittest.TestCase):
         product = next(products)
         with tempfile.TemporaryDirectory() as tempdir:
             catalogue.download_product(product, tempdir)
-            prod_dir = os.path.join(tempdir, product.title)
+            prod_dir = os.path.join(tempdir, product.id)
             self.assertTrue(os.path.isdir(prod_dir))
             for pf in product.data:
                 self.assertTrue(os.path.isfile(os.path.join(prod_dir, os.path.basename(pf.href))))

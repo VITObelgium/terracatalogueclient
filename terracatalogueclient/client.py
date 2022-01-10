@@ -173,6 +173,10 @@ class Catalogue:
 
         :return: the catalogue object
         """
+
+        if not self.config.oidc_interactive_supported:
+            raise ProductDownloadException(f"Interactive authentication is not supported for this catalogue endpoint")
+
         self._auth = auth.authorization_code_grant(
             authorization_url=self.config.oidc_authorization_endpoint,
             token_url=self.config.oidc_token_endpoint,
@@ -188,10 +192,15 @@ class Catalogue:
         :param password: password
         :return: the catalogue object
         """
+
+        if not self.config.oidc_non_interactive_supported:
+            raise ProductDownloadException(f"Non interactive authentication is not supported for this catalogue endpoint")
+
         self._auth = auth.resource_owner_password_credentials_grant(
             username=username,
             password=password,
             client_id=self.config.oidc_client_id,
+            client_secret=self.config.oidc_client_secret,
             token_url=self.config.oidc_token_endpoint
         )
         return self
