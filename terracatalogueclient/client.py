@@ -301,7 +301,7 @@ class Catalogue:
         kwargs['collection'] = collection
         kwargs['count'] = 0
         self._convert_parameters(kwargs)
-        response = requests.get(url, params=kwargs, headers=_DEFAULT_REQUEST_HEADERS)
+        response = requests.get(url, params=kwargs, auth=self._auth if self._is_authenticated() else None, headers=_DEFAULT_REQUEST_HEADERS)
         if response.status_code == requests.codes.ok:
             response_json = response.json()
             return response_json['totalResults']
@@ -519,12 +519,18 @@ class Catalogue:
         else:
             return requested_results <= page_size
 
-    @staticmethod
-    def _get_paginated_feature_generator(url: str, url_params: dict, builder) -> Iterator:
+    def _is_authenticated(self):
+        """
+        Checks if the user is authenticated.
+        :return: true if the user is authenticated.
+        """
+        return not isinstance(self._auth, auth.NoAuth)
+
+    def _get_paginated_feature_generator(self, url: str, url_params: dict, builder) -> Iterator:
         limit = url_params.pop("limit", None)
         feature_count = 0
 
-        response = requests.get(url, params=url_params, headers=_DEFAULT_REQUEST_HEADERS)
+        response = requests.get(url, params=url_params, auth=self._auth if self._is_authenticated() else None, headers=_DEFAULT_REQUEST_HEADERS)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -541,7 +547,7 @@ class Catalogue:
 
             while 'next' in response_json['properties']['links']:
                 url = response_json['properties']['links']['next'][0]['href']
-                response = requests.get(url, headers=_DEFAULT_REQUEST_HEADERS)
+                response = requests.get(url, auth=self._auth if self._is_authenticated() else None, headers=_DEFAULT_REQUEST_HEADERS)
 
                 if response.status_code == requests.codes.ok:
                     response_json = response.json()
