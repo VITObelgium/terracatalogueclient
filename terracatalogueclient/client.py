@@ -167,6 +167,12 @@ class Catalogue:
         self._auth = auth.NoAuth()
         self.s3 = None
 
+        self._session_search = requests.Session()
+        self._session_search.headers.update(_DEFAULT_REQUEST_HEADERS)
+        self._session_search.headers.update({
+            "Accept": "application/json, application/geo+json"
+        })
+
     def authenticate(self) -> 'Catalogue':
         """
         Authenticate to the catalogue in an interactive way. A browser window will open to handle the sign-in procedure.
@@ -182,6 +188,7 @@ class Catalogue:
             token_url=self.config.oidc_token_endpoint,
             client_id=self.config.oidc_client_id
         )
+        self._session_search.auth = self._auth
         return self
 
     def authenticate_non_interactive(self, username: str, password: str) -> 'Catalogue':
@@ -203,6 +210,7 @@ class Catalogue:
             client_secret=self.config.oidc_client_secret,
             token_url=self.config.oidc_token_endpoint
         )
+        self._session_search.auth = self._auth
         return self
 
     def get_collections(self,
@@ -301,7 +309,7 @@ class Catalogue:
         kwargs['collection'] = collection
         kwargs['count'] = 0
         self._convert_parameters(kwargs)
-        response = requests.get(url, params=kwargs, auth=self._auth if self._is_authenticated() else None, headers=_DEFAULT_REQUEST_HEADERS)
+        response = self._session_search.get(url, params=kwargs)
         if response.status_code == requests.codes.ok:
             response_json = response.json()
             return response_json['totalResults']
@@ -530,7 +538,7 @@ class Catalogue:
         limit = url_params.pop("limit", None)
         feature_count = 0
 
-        response = requests.get(url, params=url_params, auth=self._auth if self._is_authenticated() else None, headers=_DEFAULT_REQUEST_HEADERS)
+        response = self._session_search.get(url, params=url_params)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -547,7 +555,7 @@ class Catalogue:
 
             while 'next' in response_json['properties']['links']:
                 url = response_json['properties']['links']['next'][0]['href']
-                response = requests.get(url, auth=self._auth if self._is_authenticated() else None, headers=_DEFAULT_REQUEST_HEADERS)
+                response = self._session_search.get(url)
 
                 if response.status_code == requests.codes.ok:
                     response_json = response.json()
