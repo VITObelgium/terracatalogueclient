@@ -18,6 +18,7 @@ from terracatalogueclient.exceptions import TooManyResultsException, ProductDown
 T = TypeVar('T')
 
 _DEFAULT_REQUEST_HEADERS = {"User-Agent": f"{__title__}/{__version__}"}
+_SEARCH_TIMEOUT = 60
 
 
 class Collection:
@@ -309,7 +310,7 @@ class Catalogue:
         kwargs['collection'] = collection
         kwargs['count'] = 0
         self._convert_parameters(kwargs)
-        response = self._session_search.get(url, params=kwargs)
+        response = self._session_search.get(url, params=kwargs, timeout=_SEARCH_TIMEOUT)
         if response.status_code == requests.codes.ok:
             response_json = response.json()
             return response_json['totalResults']
@@ -538,7 +539,7 @@ class Catalogue:
         limit = url_params.pop("limit", None)
         feature_count = 0
 
-        response = self._session_search.get(url, params=url_params)
+        response = self._session_search.get(url, params=url_params, timeout=_SEARCH_TIMEOUT)
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -555,7 +556,7 @@ class Catalogue:
 
             while 'next' in response_json['properties']['links']:
                 url = response_json['properties']['links']['next'][0]['href']
-                response = self._session_search.get(url)
+                response = self._session_search.get(url, timeout=_SEARCH_TIMEOUT)
 
                 if response.status_code == requests.codes.ok:
                     response_json = response.json()
