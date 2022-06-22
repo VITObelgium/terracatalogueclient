@@ -1,13 +1,4 @@
-import requests.auth, requests.models
 from requests_auth import OAuth2AuthorizationCodePKCE, OAuth2ResourceOwnerPasswordCredentials
-
-
-class NoAuth(requests.auth.AuthBase):
-    def __call__(self, r: requests.models.PreparedRequest) -> requests.models.PreparedRequest:
-        # passing the Authorization header with the Bearer keyword without an actual token will result
-        # in a HTTP 401 response code instead of a redirect on a request for which authentication is required
-        r.headers['Authorization'] = "Bearer"
-        return r
 
 
 def resource_owner_password_credentials_grant(

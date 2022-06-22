@@ -220,6 +220,11 @@ class TestIntegration(unittest.TestCase):
             len(list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title="S2A_20200101T142731_19HBV_FAPAR_20M_V200", limit=220)))
         )
 
+    def test_download_unauthenticated(self):
+        catalogue = Catalogue()
+        products = list(catalogue.get_products("urn:eop:VITO:COP_DEM_GLO_30M_COG", limit=1))
+        self.assertFalse(catalogue._is_authorized_to_download_http(products[0].data[0]))
+
     # Manual tests: set the MANUAL_TESTS environment variable to 1 to run these tests.
 
     @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0, "Run manually to test download with authentication.")

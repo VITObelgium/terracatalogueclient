@@ -19,6 +19,7 @@ T = TypeVar('T')
 
 _DEFAULT_REQUEST_HEADERS = {"User-Agent": f"{__title__}/{__version__}"}
 _SEARCH_TIMEOUT = 60
+_DOWNLOAD_TIMEOUT = 300
 
 
 class Collection:
@@ -165,7 +166,7 @@ class Catalogue:
         :param config: catalogue configuration. If none is supplied, the default Terrascope config is used.
         """
         self.config = config if config else CatalogueConfig.get_default_config()
-        self._auth = auth.NoAuth()
+        self._auth = None
         self.s3 = None
 
         self._session_search = requests.Session()
@@ -173,6 +174,10 @@ class Catalogue:
         self._session_search.headers.update({
             "Accept": "application/json, application/geo+json"
         })
+
+        self._session_download = requests.Session()
+        self._session_download.headers.update(_DEFAULT_REQUEST_HEADERS)
+        self._session_download.headers.update({"Accept": "application/json"})
 
     def authenticate(self) -> 'Catalogue':
         """
@@ -190,6 +195,7 @@ class Catalogue:
             client_id=self.config.oidc_client_id
         )
         self._session_search.auth = self._auth
+        self._session_download.auth = self._auth
         return self
 
     def authenticate_non_interactive(self, username: str, password: str) -> 'Catalogue':
@@ -212,6 +218,7 @@ class Catalogue:
             token_url=self.config.oidc_token_endpoint
         )
         self._session_search.auth = self._auth
+        self._session_download.auth = self._auth
         return self
 
     def get_collections(self,
@@ -415,7 +422,7 @@ class Catalogue:
             os.makedirs(path)
         filename = os.path.basename(product_file.href)
         out_path = os.path.join(path, filename)
-        with requests.get(product_file.href, stream=True, auth=self._auth, allow_redirects=False, headers=_DEFAULT_REQUEST_HEADERS) as r:
+        with self._session_download.get(product_file.href, stream=True, allow_redirects=False, timeout=_DOWNLOAD_TIMEOUT) as r:
             r.raise_for_status()
             with open(out_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=self.config.http_download_chunk_size):
@@ -465,7 +472,7 @@ class Catalogue:
 
         :param product_file: product file
         """
-        r = requests.head(product_file.href, auth=self._auth, headers=_DEFAULT_REQUEST_HEADERS)
+        r = self._session_download.head(product_file.href, timeout=_DOWNLOAD_TIMEOUT)
         return r.ok
 
     @staticmethod
@@ -533,7 +540,7 @@ class Catalogue:
         Checks if the user is authenticated.
         :return: true if the user is authenticated.
         """
-        return not isinstance(self._auth, auth.NoAuth)
+        return self._auth is not None
 
     def _get_paginated_feature_generator(self, url: str, url_params: dict, builder) -> Iterator:
         limit = url_params.pop("limit", None)
