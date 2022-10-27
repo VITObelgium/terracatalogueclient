@@ -6,7 +6,7 @@
 TerraCatalogueClient: a Python client for the Terrascope catalogue
 ==================================================================
 
-TerraCatalogueClient is a Python client for the `Terrascope <https://terrascope.be/>`_ EO catalogue.
+TerraCatalogueClient is a Python client for the `Terrascope <https://terrascope.be/>`_ and `HRVPP <https://land.copernicus.eu/pan-european/biophysical-parameters/high-resolution-vegetation-phenology-and-productivity>`_ EO catalogues.
 This client uses the OpenSearch REST service of the catalogue and makes it easier to query and download EO data products in Python.
 
 More information about the OpenSearch interface can be found in the `Terrascope Documentation <https://docs.terrascope.be/#/Developers/WebServices/TerraCatalogue/TerraCatalogue>`_.

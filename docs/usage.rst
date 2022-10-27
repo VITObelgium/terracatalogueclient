@@ -13,7 +13,12 @@ When you create a catalogue object, you can provide a configuration file with th
     config = CatalogueConfig.from_file("/path/to/configuration.ini")
     catalogue = Catalogue(config)  # catalogue with custom configuration
 
-Check the :obj:`~terracatalogueclient.config.CatalogueConfig` API for more information on how to load a configuration file. If no configuration is supplied, the default Terrascope configuration will be used::
+Check the :obj:`~terracatalogueclient.config.CatalogueConfig` API for more information on how to load a configuration file.
+
+Terrascope configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+If no configuration is supplied, the default `Terrascope <https://terrascope.be/>`_ configuration will be used::
 
     from terracatalogueclient import Catalogue
     catalogue = Catalogue()  # catalogue with default Terrascope configuration
@@ -22,6 +27,19 @@ A configuration file has the following structure. The default configuration is u
 
 .. literalinclude:: ../terracatalogueclient/resources/terrascope.ini
     :language: ini
+
+HRVPP configuration
+^^^^^^^^^^^^^^^^^^^
+
+This client also supports the `HRVPP <https://land.copernicus.eu/pan-european/biophysical-parameters/high-resolution-vegetation-phenology-and-productivity>`_ catalogue.
+In order to initialize the client for use with the HRVPP catalogue backend::
+
+    from terracatalogueclient import Catalogue
+    from terracatalogueclient.config import CatalogueConfig
+    from terracatalogueclient.config import CatalogueEnvironment
+
+    config = CatalogueConfig.from_environment(CatalogueEnvironment.HRVPP)
+    catalogue = Catalogue(config)
 
 Query collections
 -----------------

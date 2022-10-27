@@ -88,7 +88,7 @@ class TestIntegration(unittest.TestCase):
 
     def test_get_products_title(self):
         catalogue = Catalogue()
-        title = "S2A_20200101T142731_19HBV_FAPAR_20M_V200"
+        title = "S2A_20150706T105016_31UFS_FAPAR_10M_V200"
         products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title=title))
         # expect only one product with the same title
         self.assertEqual(1, len(products))
@@ -194,7 +194,7 @@ class TestIntegration(unittest.TestCase):
 
     def test_download_xml(self):
         catalogue = Catalogue()
-        title = "S2A_20200101T142731_19HBV_FAPAR_20M_V200"
+        title = "S2A_20150706T105016_31UFS_FAPAR_10M_V200"
         products = list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title=title))
         product = products[0]
         with tempfile.TemporaryDirectory() as dir:
@@ -217,7 +217,8 @@ class TestIntegration(unittest.TestCase):
         # if the query has fewer results than the limit, only expect the actual number of results
         self.assertEqual(
             1,
-            len(list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2", title="S2A_20200101T142731_19HBV_FAPAR_20M_V200", limit=220)))
+            len(list(catalogue.get_products("urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
+                                            title="S2A_20150706T105016_31UFS_FAPAR_10M_V200", limit=220)))
         )
 
     def test_download_unauthenticated(self):

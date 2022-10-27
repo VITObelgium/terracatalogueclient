@@ -1,5 +1,13 @@
 import configparser
 import pkgutil
+from enum import Enum
+
+
+class CatalogueEnvironment(Enum):
+    """ Catalogue environment object. """
+
+    TERRASCOPE = 'terrascope.ini'
+    HRVPP = 'hrvpp.ini'
 
 
 class CatalogueConfig:
@@ -32,9 +40,7 @@ class CatalogueConfig:
 
     @staticmethod
     def get_default_config() -> 'CatalogueConfig':
-        config = configparser.ConfigParser()
-        config.read_string(pkgutil.get_data(__name__, "resources/terrascope.ini").decode())
-        return CatalogueConfig(config)
+        return CatalogueConfig.from_environment(CatalogueEnvironment.TERRASCOPE)
 
     @staticmethod
     def from_file(path: str) -> 'CatalogueConfig':
@@ -44,9 +50,22 @@ class CatalogueConfig:
         :param path: path of the catalogue .ini configuration file
         :return: CatalogueConfig object
         """
+        return CatalogueConfig.from_environment(CatalogueEnvironment.TERRASCOPE, path)
+
+    @staticmethod
+    def from_environment(environment: CatalogueEnvironment, path: str = None) -> 'CatalogueConfig':
+        """
+        Get a catalogue configuration object from a pre-defined environment.
+
+        :param environment: the pre-defined environment
+        :param path: optional path of the catalogue .ini configuration file containing values to override the
+        pre-defined environment config
+        :return: CatalogueConfig object
+        """
         config = configparser.ConfigParser()
         # read the default config first to populate default values
-        config.read_string(pkgutil.get_data(__name__, "resources/terrascope.ini").decode())
-        # apply values from custom config
-        config.read(path)
+        config.read_string(pkgutil.get_data(__name__, "resources/" + environment.value).decode())
+        if path is not None:
+            # apply values from custom config
+            config.read(path)
         return CatalogueConfig(config)
