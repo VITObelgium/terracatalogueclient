@@ -54,14 +54,13 @@ class TestHRVPP(unittest.TestCase):
     @unittest.skipIf(int(os.getenv('MANUAL_TESTS', 0)) == 0 or 'AWS_ACCESS_KEY_ID' not in os.environ or 'AWS_SECRET_ACCESS_KEY' not in os.environ,
                      "Run manually to test download with authentication. Provide S3 credentials as environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.")
     def test_download_s3(self):
+
         catalogue = Catalogue(self.config_hrvpp)
-        catalogue.config.s3_access_key = os.getenv("AWS_ACCESS_KEY_ID")
-        catalogue.config.s3_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 
         products = catalogue.get_products(
-            collection="copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-ongoing_v01_r01",
+            collection="copernicus_r_utm-wgs84_10_m_hrvpp-vi_p_2017-now_v01",
             uid="VI_20161001T092022_S2A_T34SDG-010m_V101_QFLAG2",
-            accessedFrom="S3"
+            accessedFrom="S3-private"
         )
         product = next(products)
         with tempfile.TemporaryDirectory() as tempdir:

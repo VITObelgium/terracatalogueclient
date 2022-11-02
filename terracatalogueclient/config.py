@@ -1,5 +1,6 @@
 import configparser
 import pkgutil
+import os
 from enum import Enum
 
 
@@ -68,4 +69,11 @@ class CatalogueConfig:
         if path is not None:
             # apply values from custom config
             config.read(path)
+
+        # allow override of S3 credentials using environment variables
+        if 'AWS_ACCESS_KEY_ID' in os.environ and os.environ['AWS_ACCESS_KEY_ID']:
+            config.set('S3', 'AccessKey', os.environ['AWS_ACCESS_KEY_ID'])
+        if 'AWS_SECRET_ACCESS_KEY' in os.environ and os.environ['AWS_SECRET_ACCESS_KEY']:
+            config.set('S3', 'SecretKey', os.environ['AWS_SECRET_ACCESS_KEY'])
+
         return CatalogueConfig(config)

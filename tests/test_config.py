@@ -26,3 +26,22 @@ class TestConfig(unittest.TestCase):
         config = CatalogueConfig.from_environment(CatalogueEnvironment.TERRASCOPE,
                                                   os.path.join(test_resource_dir, "override.ini"))
         self.assertEqual(4096, config.http_download_chunk_size)
+
+    def test_s3_credentials(self):
+        config = CatalogueConfig.from_environment(CatalogueEnvironment.TERRASCOPE,
+                                                  os.path.join(test_resource_dir, "override.ini"))
+        self.assertEqual("DefaultAccessKey", config.s3_access_key)
+        self.assertEqual("DefaultSecretKey", config.s3_secret_key)
+
+    def test_s3_credentials_from_env(self):
+
+        os.environ['AWS_ACCESS_KEY_ID'] = 'OverwrittenAccessKey'
+        os.environ['AWS_SECRET_ACCESS_KEY'] = 'OverwrittenSecretKey'
+
+        config = CatalogueConfig.from_environment(CatalogueEnvironment.TERRASCOPE,
+                                                  os.path.join(test_resource_dir, "override.ini"))
+        self.assertEqual('OverwrittenAccessKey', config.s3_access_key)
+        self.assertEqual('OverwrittenSecretKey', config.s3_secret_key)
+
+        os.environ.pop('AWS_ACCESS_KEY_ID')
+        os.environ.pop('AWS_SECRET_ACCESS_KEY')
