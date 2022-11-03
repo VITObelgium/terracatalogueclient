@@ -35,9 +35,17 @@ class CatalogueConfig:
         self.http_download_chunk_size = config.getint("HTTP", "ChunkSize")
 
         # S3
-        self.s3_access_key = config.get("S3", "AccessKey")
-        self.s3_secret_key = config.get("S3", "SecretKey")
         self.s3_endpoint_url = config.get("S3", "EndpointUrl")
+        # allow override of S3 credentials using environment variables
+        if 'AWS_ACCESS_KEY_ID' in os.environ and os.environ['AWS_ACCESS_KEY_ID']:
+            self.s3_access_key =  os.environ['AWS_ACCESS_KEY_ID']
+        else:
+            self.s3_access_key = config.get("S3", "AccessKey")
+
+        if 'AWS_SECRET_ACCESS_KEY' in os.environ and os.environ['AWS_SECRET_ACCESS_KEY']:
+            self.s3_secret_key =  os.environ['AWS_SECRET_ACCESS_KEY']
+        else:
+            self.s3_secret_key = config.get("S3", "SecretKey")
 
     @staticmethod
     def get_default_config() -> 'CatalogueConfig':
@@ -69,11 +77,5 @@ class CatalogueConfig:
         if path is not None:
             # apply values from custom config
             config.read(path)
-
-        # allow override of S3 credentials using environment variables
-        if 'AWS_ACCESS_KEY_ID' in os.environ and os.environ['AWS_ACCESS_KEY_ID']:
-            config.set('S3', 'AccessKey', os.environ['AWS_ACCESS_KEY_ID'])
-        if 'AWS_SECRET_ACCESS_KEY' in os.environ and os.environ['AWS_SECRET_ACCESS_KEY']:
-            config.set('S3', 'SecretKey', os.environ['AWS_SECRET_ACCESS_KEY'])
 
         return CatalogueConfig(config)

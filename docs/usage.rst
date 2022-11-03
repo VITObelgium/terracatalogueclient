@@ -136,12 +136,14 @@ Download products
 Download methods
 ^^^^^^^^^^^^^^^^
 A catalogue may support multiple data access methods. Based on the ``accessedFrom`` search parameter supplied when querying products, the product file links will be provided for your preferred access method.
-The default value is HTTP, but other options are S3 and MEP (local paths). This data access method will be used later when downloading the products.
+The default value is HTTP, but other options are (amongst others) S3 and MEP (local paths). This data access method will be used later when downloading the products.
 
 .. note::
-    The Terrascope catalogue doesn't support the S3 data access method.
+    The Terrascope catalogue doesn't support the S3 data access method. Consult the OpenSearch Description Document
+    (endpoint '/description') to get allowed values per deployment (Terrascope, HRVPP).
 
-For downloading products over S3, make sure to use the ``accessedFrom="S3"`` parameter in the product search::
+For downloading products over S3, make sure to use the ``accessedFrom="S3"`` parameter in the product search.
+Also specify the S3 endpoint and S3 credentials, either in the configuration file or using environment variables::
 
     products = catalogue.get_products(
         collection=collection,

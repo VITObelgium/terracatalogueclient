@@ -457,7 +457,8 @@ class Catalogue:
         boto3.setup_default_session(botocore_session=botocore_session)
 
         if not (self.config.s3_endpoint_url and self.config.s3_access_key and self.config.s3_secret_key):
-            raise ProductDownloadException("Please provide S3 details in the configuration in order to use S3 as a download method.")
+            raise ProductDownloadException("Please provide S3 endpoint and credentials in the configuration file "
+                                           "or using environment variables in order to use S3 as a download method.")
 
         self.s3 = boto3.resource(
             's3',
