@@ -1,4 +1,5 @@
 import requests
+import requests.adapters
 import datetime as dt
 import os
 import boto3
@@ -10,6 +11,7 @@ import shapely.wkt as wkt
 import humanfriendly
 import enum
 from typing import Iterator, List, Optional, Union, Dict, Iterable, Tuple, Callable, TypeVar
+import logging
 
 from terracatalogueclient import auth, __title__, __version__
 from terracatalogueclient.config import CatalogueConfig
@@ -20,6 +22,8 @@ T = TypeVar('T')
 _DEFAULT_REQUEST_HEADERS = {"User-Agent": f"{__title__}/{__version__}"}
 _SEARCH_TIMEOUT = 60
 _DOWNLOAD_TIMEOUT = 300
+
+logger = logging.getLogger(__name__)
 
 
 class Collection:
@@ -169,15 +173,19 @@ class Catalogue:
         self._auth = None
         self.s3 = None
 
+        adapter = requests.adapters.HTTPAdapter(max_retries=requests.adapters.Retry(total=5))
+
         self._session_search = requests.Session()
         self._session_search.headers.update(_DEFAULT_REQUEST_HEADERS)
         self._session_search.headers.update({
             "Accept": "application/json, application/geo+json"
         })
+        self._session_search.mount("http", adapter)
 
         self._session_download = requests.Session()
         self._session_download.headers.update(_DEFAULT_REQUEST_HEADERS)
         self._session_download.headers.update({"Accept": "application/json"})
+        self._session_download.mount("http", adapter)
 
     def authenticate(self) -> 'Catalogue':
         """
@@ -318,6 +326,7 @@ class Catalogue:
         kwargs['count'] = 0
         self._convert_parameters(kwargs)
         response = self._session_search.get(url, params=kwargs, timeout=_SEARCH_TIMEOUT)
+        logger.debug(f"{response.request.url} - {response.status_code}")
         if response.status_code == requests.codes.ok:
             response_json = response.json()
             return response_json['totalResults']
@@ -360,18 +369,23 @@ class Catalogue:
 
         return files
 
-    def download_products(self,
-                          products: Iterable[Product],
-                          path: str,
-                          file_types: ProductFileType = ProductFileType.ALL,
-                          force: bool = False):
-        """ Download the given products. This will download the files belonging to the given products matching the provided file types.
+    def download_products(
+        self,
+        products: Iterable[Product],
+        path: str,
+        file_types: ProductFileType = ProductFileType.ALL,
+        force: bool = False,
+        raise_on_failure: bool = True
+    ):
+        """
+        Download the given products. This will download the files belonging to the given products matching the provided file types.
 
-         :param products: iterable of products to download
-         :param path: output directory to write files to
-         :param file_types: type of product files to download
-         :param force: skip download confirmation
-         """
+        :param products: iterable of products to download
+        :param path: output directory to write files to
+        :param file_types: type of product files to download
+        :param force: skip download confirmation
+        :param raise_on_failure: raise an exception on a failure or silently continue
+        """
         products = list(products)
         if not force:
             confirmed = False
@@ -382,17 +396,29 @@ class Catalogue:
                 elif in_confirmation.lower() == "n":
                     return
         for product in products:
-            self.download_product(product, path, file_types)
+            self.download_product(product, path, file_types, raise_on_failure)
 
-    def download_product(self, product: Product, path: str, file_types: ProductFileType = ProductFileType.ALL):
+    def download_product(
+        self,
+        product: Product,
+        path: str,
+        file_types: ProductFileType = ProductFileType.ALL,
+        raise_on_failure: bool = True
+    ):
         """ Download a single product. This will download all files belonging to the given product.
 
         :param product: product to download
         :param path: output directory to write files to
         :param file_types: type of product files to download
+        :param raise_on_failure: raise an exception on a failure or silently continue
         """
         for product_file in self._get_product_files_matching_file_types(product, file_types):
-            self.download_file(product_file, self._get_product_dir(path, product))
+            try:
+                self.download_file(product_file, self._get_product_dir(path, product))
+            except ConnectionError as e:
+                logger.error(e)
+                if raise_on_failure:
+                    raise e
 
     def download_file(self, product_file: ProductFile, path: str):
         """ Download a single product file.
@@ -417,11 +443,13 @@ class Catalogue:
         """
         if not self._is_authorized_to_download_http(product_file):
             raise ProductDownloadException(f"You are not authorized to download this product. Make sure you are authenticated to the catalogue.")
-        # create output directory if it doesn't exists
+        # create output directory if it doesn't exist
         if not os.path.exists(path):
+            logger.debug(f"Creating output directory {path}")
             os.makedirs(path)
         filename = os.path.basename(product_file.href)
         out_path = os.path.join(path, filename)
+        logger.info(f"Downloading {product_file.href} to {out_path}")
         with self._session_download.get(product_file.href, stream=True, allow_redirects=False, timeout=_DOWNLOAD_TIMEOUT) as r:
             r.raise_for_status()
             with open(out_path, 'wb') as f:
@@ -437,6 +465,7 @@ class Catalogue:
         :param path: output directory to write the file to
         """
         if not os.path.exists(path):
+            logger.debug(f"Creating output directory {path}")
             os.makedirs(path)
         filename = os.path.basename(product_file.href)
         out_path = os.path.join(path, filename)
@@ -444,14 +473,16 @@ class Catalogue:
         if not self.s3:
             self._init_s3_client()
 
+        logger.info(f"Downloading {product_file.href} to {out_path}")
         _, tmp = product_file.href.split("://", 1)
         bucket_name, key = tmp.split("/", 1)
         bucket = self.s3.Bucket(bucket_name)
         bucket.download_file(key, out_path)
 
     def _init_s3_client(self):
-        """ Setup the S3 resource service client using the configuration values. """
+        """ Set up the S3 resource service client using the configuration values. """
         # disable bucket name validation: https://creodias.eu/-/bucket-sharing-using-s3-bucket-policy
+        logger.info("Initializing S3 client")
         botocore_session = botocore.session.Session()
         botocore_session.unregister('before-parameter-build.s3', botocore.handlers.validate_bucket_name)
         boto3.setup_default_session(botocore_session=botocore_session)
@@ -548,6 +579,7 @@ class Catalogue:
         feature_count = 0
 
         response = self._session_search.get(url, params=url_params, timeout=_SEARCH_TIMEOUT)
+        logger.debug(f"{response.request.url} - {response.status_code}")
 
         if response.status_code == requests.codes.ok:
             response_json = response.json()
@@ -565,6 +597,7 @@ class Catalogue:
             while 'next' in response_json['properties']['links']:
                 url = response_json['properties']['links']['next'][0]['href']
                 response = self._session_search.get(url, timeout=_SEARCH_TIMEOUT)
+                logger.debug(f"{response.request.url} - {response.status_code}")
 
                 if response.status_code == requests.codes.ok:
                     response_json = response.json()
