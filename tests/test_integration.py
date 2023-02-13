@@ -21,10 +21,10 @@ class TestIntegration(unittest.TestCase):
 
     def test_get_collections_by_platform(self):
         catalogue = Catalogue()
-        collections = list(catalogue.get_collections(platform="SENTINEL-1"))
+        collections = list(catalogue.get_collections(platform="Sentinel-1"))
         self.assertTrue(len(collections) > 0)
         for c in collections:
-            self.assertTrue(any(a['platform']['platformShortName'] == "SENTINEL-1" for a in c.properties['acquisitionInformation']))
+            self.assertTrue(any(a['platform']['platformShortName'] == "Sentinel-1" for a in c.properties['acquisitionInformation']))
 
     def test_get_collection_by_date(self):
         catalogue = Catalogue()
