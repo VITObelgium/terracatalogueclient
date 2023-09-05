@@ -41,6 +41,7 @@ html_last_updated_fmt = "%Y/%m/%d"
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'enum_tools.autoenum',
     'sphinx_autodoc_typehints',
     'sphinx.ext.viewcode',
     'sphinx_copybutton',

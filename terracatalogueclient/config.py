@@ -69,7 +69,7 @@ class CatalogueConfig:
 
         :param environment: the pre-defined environment
         :param path: optional path of the catalogue .ini configuration file containing values to override the
-        pre-defined environment config
+            pre-defined environment config
         :return: CatalogueConfig object
         """
         config = configparser.ConfigParser()

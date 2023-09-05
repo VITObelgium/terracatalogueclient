@@ -2,6 +2,7 @@ furo
 sphinx-autodoc-typehints
 sphinx-copybutton
 sphinx-design
+enum-tools[sphinx]
 
 shapely
 requests

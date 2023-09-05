@@ -28,18 +28,35 @@ A configuration file has the following structure. The default configuration is u
 .. literalinclude:: ../terracatalogueclient/resources/terrascope.ini
     :language: ini
 
-HRVPP configuration
-^^^^^^^^^^^^^^^^^^^
+Pre-defined configurations
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``terracatalogueclient`` also supports other catalogues:
 
-This client also supports the `HRVPP <https://land.copernicus.eu/pan-european/biophysical-parameters/high-resolution-vegetation-phenology-and-productivity>`_ catalogue.
-In order to initialize the client for use with the HRVPP catalogue backend::
+* `HR-VPP <https://land.copernicus.eu/pan-european/biophysical-parameters/high-resolution-vegetation-phenology-and-productivity>`_
+* `Copernicus Global Land Service (CGLS) <https://land.copernicus.eu/global/>`_
+
+We include pre-defined configurations for them. The following code snippet shows how to initialize the client for use with the HR-VPP catalogue::
 
     from terracatalogueclient import Catalogue
-    from terracatalogueclient.config import CatalogueConfig
-    from terracatalogueclient.config import CatalogueEnvironment
+    from terracatalogueclient.config import CatalogueConfig, CatalogueEnvironment
 
     config = CatalogueConfig.from_environment(CatalogueEnvironment.HRVPP)
     catalogue = Catalogue(config)
+
+For CGLS, the :attr:`~terracatalogueclient.config.CatalogueEnvironment.CGLS` :obj:`~terracatalogueclient.config.CatalogueEnvironment` can be used.
+
+Authentication
+--------------
+Downloading products and accessing protected collections may require you to authenticate. This is done by first creating a catalogue object and subsequently calling the :meth:`~terracatalogueclient.client.Catalogue.authenticate` or :meth:`~terracatalogueclient.client.Catalogue.authenticate_non_interactive` method.
+The :meth:`~terracatalogueclient.client.Catalogue.authenticate` method will open a browser window to provide you with a login form::
+
+    from terracatalogueclient import Catalogue
+    catalogue = Catalogue().authenticate()  # authenticated catalogue
+
+The :meth:`~terracatalogueclient.client.Catalogue.authenticate_non_interactive` method uses the provided username and password directly to obtain an access token. However, it is a bad practice to store your credentials directly in a script!
+
+.. note::
+    The CGLS catalogue doesn't require authentication to download products.
 
 Query collections
 -----------------
