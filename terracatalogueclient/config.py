@@ -9,6 +9,7 @@ class CatalogueEnvironment(Enum):
 
     TERRASCOPE = 'terrascope.ini'
     HRVPP = 'hrvpp.ini'
+    CGLS = 'cgls.ini'
 
 
 class CatalogueConfig:
