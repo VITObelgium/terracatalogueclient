@@ -8,7 +8,7 @@ Installation
 
 This package is available in the public Terrascope PyPi repository and can be installed using ``pip``::
 
-    $ pip install --extra-index-url https://artifactory.vgt.vito.be/api/pypi/python-packages/simple terracatalogueclient
+    $ pip install --extra-index-url https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple terracatalogueclient
 
 
 Alternatively, you can configure ``pip`` to use the Terrascope repository by default:

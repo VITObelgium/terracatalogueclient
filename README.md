@@ -14,7 +14,7 @@ This package is available in the public Terrascope PyPi repository and can be in
 - add the Terrascope PyPi repository in your [`pip` configuration file](https://pip.pypa.io/en/stable/user_guide/#configuration)
     ```
     [global]
-    index-url = https://artifactory.vgt.vito.be/api/pypi/python-packages/simple
+    index-url = https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple
     ```
 - install the `terracatalogueclient` package
     ```
