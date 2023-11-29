@@ -16,7 +16,7 @@ Alternatively, you can configure ``pip`` to use the Terrascope repository by def
 - add the Terrascope PyPi repository in your `pip configuration file <https://pip.pypa.io/en/stable/user_guide/#configuration>`_::
 
     [global]
-    index-url = https://artifactory.vgt.vito.be/api/pypi/python-packages/simple
+    extra-index-url = https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple
 
 - install the ``terracatalogueclient`` package::
 
