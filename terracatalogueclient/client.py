@@ -173,19 +173,27 @@ class Catalogue:
         self._auth = None
         self.s3 = None
 
-        adapter = requests.adapters.HTTPAdapter(max_retries=requests.adapters.Retry(total=5))
+        adapter = requests.adapters.HTTPAdapter(
+            max_retries=requests.adapters.Retry(
+                total=5,
+                backoff_factor=2,
+                status_forcelist=[429, 500, 502, 503, 504]
+            )
+        )
 
         self._session_search = requests.Session()
         self._session_search.headers.update(_DEFAULT_REQUEST_HEADERS)
         self._session_search.headers.update({
             "Accept": "application/json, application/geo+json"
         })
-        self._session_search.mount("http", adapter)
+        self._session_search.mount("http://", adapter)
+        self._session_search.mount("https://", adapter)
 
         self._session_download = requests.Session()
         self._session_download.headers.update(_DEFAULT_REQUEST_HEADERS)
         self._session_download.headers.update({"Accept": "application/json"})
-        self._session_download.mount("http", adapter)
+        self._session_download.mount("http://", adapter)
+        self._session_download.mount("https://", adapter)
 
     def authenticate(self) -> 'Catalogue':
         """

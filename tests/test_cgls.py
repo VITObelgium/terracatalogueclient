@@ -48,3 +48,13 @@ class TestCGLS(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             catalogue.download_product(next(products), tmpdir)
 
+    def test_download_multiple(self):
+        catalogue = Catalogue(self.config_cgls)
+        params = {
+            "collection": "clms_global_lst_5km_v2_hourly_netcdf",
+            "start": date(2023, 1, 1),
+            "end": date(2023, 1, 2)
+        }
+        products = catalogue.get_products(**params)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            catalogue.download_products(products, tmpdir, force=True)
