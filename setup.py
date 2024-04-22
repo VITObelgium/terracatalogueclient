@@ -1,9 +1,10 @@
 from setuptools import setup, find_packages
 import re
 
-with open('terracatalogueclient/__init__.py', 'r') as fd:
-    __version__ = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                            fd.read(), re.MULTILINE).group(1)
+with open("terracatalogueclient/__init__.py", "r") as fd:
+    __version__ = re.search(
+        r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE
+    ).group(1)
 
 version = __version__
 
@@ -16,11 +17,18 @@ setup(
     url="https://github.com/VITObelgium/terracatalogueclient",
     packages=find_packages(),
     package_data={"": ["resources/*"]},
-    install_requires=["requests", "requests-auth~=6.0", "shapely", "humanfriendly", "boto3"],
+    install_requires=[
+        "requests",
+        "requests-auth~=6.0",
+        "shapely",
+        "humanfriendly",
+        "boto3",
+    ],
     test_suite="tests",
     tests_require=["pytest"],
     setup_requires=["pytest-runner"],
     extras_require={
-        "docs": ["sphinx", "sphinx-autodoc-typehints"]
-    }
+        "docs": ["sphinx", "sphinx-autodoc-typehints"],
+        "dev": ["pre-commit", "ruff"],
+    },
 )

@@ -3,21 +3,37 @@ import requests.adapters
 import datetime as dt
 import os
 import boto3
-import botocore.session, botocore.handlers
+import botocore.session
+import botocore.handlers
 from urllib.parse import urljoin, urlparse, parse_qs
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 import shapely.wkt as wkt
 import humanfriendly
 import enum
-from typing import Iterator, List, Optional, Union, Dict, Iterable, Tuple, Callable, TypeVar
+from typing import (
+    Iterator,
+    List,
+    Optional,
+    Union,
+    Dict,
+    Iterable,
+    Tuple,
+    Callable,
+    TypeVar,
+)
 import logging
 
 from terracatalogueclient import auth, __title__, __version__
 from terracatalogueclient.config import CatalogueConfig
-from terracatalogueclient.exceptions import TooManyResultsException, ProductDownloadException, ParameterParserException, SearchException
+from terracatalogueclient.exceptions import (
+    TooManyResultsException,
+    ProductDownloadException,
+    ParameterParserException,
+    SearchException,
+)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 _DEFAULT_REQUEST_HEADERS = {"User-Agent": f"{__title__}/{__version__}"}
 _SEARCH_TIMEOUT = 60
@@ -42,7 +58,14 @@ class Collection:
     :vartype properties: dict
     """
 
-    def __init__(self, id: str, geojson: dict, geometry: BaseGeometry, bbox: List[float], properties: dict):
+    def __init__(
+        self,
+        id: str,
+        geojson: dict,
+        geometry: BaseGeometry,
+        bbox: List[float],
+        properties: dict,
+    ):
         self.id = id
         self.geojson = geojson
         self.geometry = geometry
@@ -57,6 +80,7 @@ class ProductFileType(enum.Flag):
     """
     Enum flag to indicate the type of a product file.
     """
+
     DATA = enum.auto()  #: Data files
     RELATED = enum.auto()  #: Related files (eg. cloud mask)
     PREVIEWS = enum.auto()  #: Previews
@@ -80,12 +104,14 @@ class ProductFile:
     :vartype category: Optional[str]
     """
 
-    def __init__(self,
-                 href: str,
-                 length: Optional[int],
-                 title: Optional[str] = None,
-                 type: Optional[str] = None,
-                 category: Optional[str] = None):
+    def __init__(
+        self,
+        href: str,
+        length: Optional[int],
+        title: Optional[str] = None,
+        type: Optional[str] = None,
+        category: Optional[str] = None,
+    ):
         self.href = href
         self.length = length
         self.title = title
@@ -96,7 +122,7 @@ class ProductFile:
         return self.href
 
     def get_protocol(self):
-        return self.href[:self.href.find("://")].lower()
+        return self.href[: self.href.find("://")].lower()
 
 
 class Product:
@@ -129,19 +155,21 @@ class Product:
     :vartype alternates: List[ProductFile]
     """
 
-    def __init__(self,
-                 id: str,
-                 title: str,
-                 geojson: dict,
-                 geometry: BaseGeometry,
-                 bbox: List[float],
-                 beginningDateTime : Optional[dt.datetime],
-                 endingDateTime: Optional[dt.datetime],
-                 properties: dict,
-                 data: List[ProductFile],
-                 related: List[ProductFile],
-                 previews: List[ProductFile],
-                 alternates: List[ProductFile]):
+    def __init__(
+        self,
+        id: str,
+        title: str,
+        geojson: dict,
+        geometry: BaseGeometry,
+        bbox: List[float],
+        beginningDateTime: Optional[dt.datetime],
+        endingDateTime: Optional[dt.datetime],
+        properties: dict,
+        data: List[ProductFile],
+        related: List[ProductFile],
+        previews: List[ProductFile],
+        alternates: List[ProductFile],
+    ):
         self.id = id
         self.title = title
         self.geojson = geojson
@@ -163,7 +191,7 @@ class Product:
 
 
 class Catalogue:
-    """ Connection to a catalogue endpoint, which allows for searching and downloading EO products. """
+    """Connection to a catalogue endpoint, which allows for searching and downloading EO products."""
 
     def __init__(self, config: CatalogueConfig = None):
         """
@@ -175,17 +203,15 @@ class Catalogue:
 
         adapter = requests.adapters.HTTPAdapter(
             max_retries=requests.adapters.Retry(
-                total=5,
-                backoff_factor=2,
-                status_forcelist=[429, 500, 502, 503, 504]
+                total=5, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504]
             )
         )
 
         self._session_search = requests.Session()
         self._session_search.headers.update(_DEFAULT_REQUEST_HEADERS)
-        self._session_search.headers.update({
-            "Accept": "application/json, application/geo+json"
-        })
+        self._session_search.headers.update(
+            {"Accept": "application/json, application/geo+json"}
+        )
         self._session_search.mount("http://", adapter)
         self._session_search.mount("https://", adapter)
 
@@ -195,7 +221,7 @@ class Catalogue:
         self._session_download.mount("http://", adapter)
         self._session_download.mount("https://", adapter)
 
-    def authenticate(self) -> 'Catalogue':
+    def authenticate(self) -> "Catalogue":
         """
         Authenticate to the catalogue in an interactive way. A browser window will open to handle the sign-in procedure.
 
@@ -203,18 +229,20 @@ class Catalogue:
         """
 
         if not self.config.oidc_interactive_supported:
-            raise ProductDownloadException(f"Interactive authentication is not supported for this catalogue endpoint")
+            raise ProductDownloadException(
+                "Interactive authentication is not supported for this catalogue endpoint"
+            )
 
         self._auth = auth.authorization_code_grant(
             authorization_url=self.config.oidc_authorization_endpoint,
             token_url=self.config.oidc_token_endpoint,
-            client_id=self.config.oidc_client_id
+            client_id=self.config.oidc_client_id,
         )
         self._session_search.auth = self._auth
         self._session_download.auth = self._auth
         return self
 
-    def authenticate_non_interactive(self, username: str, password: str) -> 'Catalogue':
+    def authenticate_non_interactive(self, username: str, password: str) -> "Catalogue":
         """
         Authenticate to the catalogue in a non-interactive way. This requires you to pass your user credentials directly in the code.
 
@@ -224,26 +252,32 @@ class Catalogue:
         """
 
         if not self.config.oidc_non_interactive_supported:
-            raise ProductDownloadException(f"Non interactive authentication is not supported for this catalogue endpoint")
+            raise ProductDownloadException(
+                "Non interactive authentication is not supported for this catalogue endpoint"
+            )
 
         self._auth = auth.resource_owner_password_credentials_grant(
             username=username,
             password=password,
             client_id=self.config.oidc_client_id,
             client_secret=self.config.oidc_client_secret,
-            token_url=self.config.oidc_token_endpoint
+            token_url=self.config.oidc_token_endpoint,
         )
         self._session_search.auth = self._auth
         self._session_download.auth = self._auth
         return self
 
-    def get_collections(self,
-                        start: Optional[Union[str, dt.date, dt.datetime]] = None,
-                        end: Optional[Union[str, dt.date, dt.datetime]] = None,
-                        bbox: Optional[Union[str, List[Union[int, float]], Dict[str, Union[int, float]]]] = None,
-                        geometry: Optional[Union[str, BaseGeometry]] = None,
-                        platform: Optional[str] = None,
-                        **kwargs) -> Iterator[Collection]:
+    def get_collections(
+        self,
+        start: Optional[Union[str, dt.date, dt.datetime]] = None,
+        end: Optional[Union[str, dt.date, dt.datetime]] = None,
+        bbox: Optional[
+            Union[str, List[Union[int, float]], Dict[str, Union[int, float]]]
+        ] = None,
+        geometry: Optional[Union[str, BaseGeometry]] = None,
+        platform: Optional[str] = None,
+        **kwargs,
+    ) -> Iterator[Collection]:
         """
         Get the collections in the catalogue.
 
@@ -255,33 +289,64 @@ class Catalogue:
         :param \**kwargs: additional query parameters can be provided as keyword arguments
         """
         url = urljoin(self.config.catalogue_url, "collections")
-        if start: kwargs['start'] = start
-        if end: kwargs['end'] = end
-        if bbox: kwargs['bbox'] = bbox
-        if geometry: kwargs['geometry'] = geometry
-        if platform: kwargs['platform'] = platform
+        if start:
+            kwargs["start"] = start
+        if end:
+            kwargs["end"] = end
+        if bbox:
+            kwargs["bbox"] = bbox
+        if geometry:
+            kwargs["geometry"] = geometry
+        if platform:
+            kwargs["platform"] = platform
         self._convert_parameters(kwargs)
-        return self._get_paginated_feature_generator(url, kwargs, self._build_collection)
+        return self._get_paginated_feature_generator(
+            url, kwargs, self._build_collection
+        )
 
-    def get_products(self,
-                     collection: str,
-                     start: Optional[Union[str, dt.date, dt.datetime]] = None,
-                     end: Optional[Union[str, dt.date, dt.datetime]] = None,
-                     bbox: Optional[Union[str, List[Union[int, float]], Dict[str, Union[int, float]]]] = None,
-                     geometry: Optional[Union[str, BaseGeometry]] = None,
-                     title: Optional[str] = None,
-                     productType: Optional[str] = None,
-                     relativeOrbitNumber: Optional[Union[int, str]] = None,
-                     orbitDirection: Optional[str] = None,
-                     cloudCover: Optional[Union[Tuple[Union[float, int, None], Union[float, int, None]], float, int, str]] = None,
-                     tileId: Optional[str] = None,
-                     productGroupId: Optional[str] = None,
-                     publicationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
-                     modificationDate: Optional[Union[Tuple[Union[dt.date, dt.datetime, str, None], Union[dt.date, dt.datetime, str, None]], str]] = None,
-                     accessedFrom: Optional[str] = None,
-                     limit: Optional[int] = None,
-                     **kwargs) -> Iterator[Product]:
-        """ Get the products matching the query.
+    def get_products(
+        self,
+        collection: str,
+        start: Optional[Union[str, dt.date, dt.datetime]] = None,
+        end: Optional[Union[str, dt.date, dt.datetime]] = None,
+        bbox: Optional[
+            Union[str, List[Union[int, float]], Dict[str, Union[int, float]]]
+        ] = None,
+        geometry: Optional[Union[str, BaseGeometry]] = None,
+        title: Optional[str] = None,
+        productType: Optional[str] = None,
+        relativeOrbitNumber: Optional[Union[int, str]] = None,
+        orbitDirection: Optional[str] = None,
+        cloudCover: Optional[
+            Union[
+                Tuple[Union[float, int, None], Union[float, int, None]], float, int, str
+            ]
+        ] = None,
+        tileId: Optional[str] = None,
+        productGroupId: Optional[str] = None,
+        publicationDate: Optional[
+            Union[
+                Tuple[
+                    Union[dt.date, dt.datetime, str, None],
+                    Union[dt.date, dt.datetime, str, None],
+                ],
+                str,
+            ]
+        ] = None,
+        modificationDate: Optional[
+            Union[
+                Tuple[
+                    Union[dt.date, dt.datetime, str, None],
+                    Union[dt.date, dt.datetime, str, None],
+                ],
+                str,
+            ]
+        ] = None,
+        accessedFrom: Optional[str] = None,
+        limit: Optional[int] = None,
+        **kwargs,
+    ) -> Iterator[Product]:
+        """Get the products matching the query.
 
         :param collection: collection to query
         :param start: start of the temporal interval to search
@@ -302,27 +367,42 @@ class Catalogue:
         :param \**kwargs: additional query parameters can be provided as keyword arguments
         """
         url = urljoin(self.config.catalogue_url, "products")
-        kwargs['collection'] = collection
-        if start: kwargs['start'] = start
-        if end: kwargs['end'] = end
-        if bbox: kwargs['bbox'] = bbox
-        if geometry: kwargs['geometry'] = geometry
-        if title: kwargs['title'] = title
-        if productType: kwargs['productType'] = productType
-        if relativeOrbitNumber: kwargs['relativeOrbitNumber'] = relativeOrbitNumber
-        if orbitDirection: kwargs['orbitDirection'] = orbitDirection
-        if cloudCover: kwargs['cloudCover'] = cloudCover
-        if tileId: kwargs['tileId'] = tileId
-        if productGroupId: kwargs['productGroupId'] = productGroupId
-        if publicationDate: kwargs['publicationDate'] = publicationDate
-        if modificationDate: kwargs['modificationDate'] = modificationDate
-        if accessedFrom: kwargs['accessedFrom'] = accessedFrom
-        if limit: kwargs['limit'] = limit
+        kwargs["collection"] = collection
+        if start:
+            kwargs["start"] = start
+        if end:
+            kwargs["end"] = end
+        if bbox:
+            kwargs["bbox"] = bbox
+        if geometry:
+            kwargs["geometry"] = geometry
+        if title:
+            kwargs["title"] = title
+        if productType:
+            kwargs["productType"] = productType
+        if relativeOrbitNumber:
+            kwargs["relativeOrbitNumber"] = relativeOrbitNumber
+        if orbitDirection:
+            kwargs["orbitDirection"] = orbitDirection
+        if cloudCover:
+            kwargs["cloudCover"] = cloudCover
+        if tileId:
+            kwargs["tileId"] = tileId
+        if productGroupId:
+            kwargs["productGroupId"] = productGroupId
+        if publicationDate:
+            kwargs["publicationDate"] = publicationDate
+        if modificationDate:
+            kwargs["modificationDate"] = modificationDate
+        if accessedFrom:
+            kwargs["accessedFrom"] = accessedFrom
+        if limit:
+            kwargs["limit"] = limit
         self._convert_parameters(kwargs)
         return self._get_paginated_feature_generator(url, kwargs, self._build_product)
 
     def get_product_count(self, collection: str, **kwargs):
-        """ Get the count of products matching the query.
+        """Get the count of products matching the query.
 
         This is significantly more efficient than loading all results and then counting.
 
@@ -330,19 +410,21 @@ class Catalogue:
         :param \**kwargs: query parameters, check :meth:`~terracatalogueclient.client.Catalogue.get_products` for more information on query parameters
         """
         url = urljoin(self.config.catalogue_url, "products")
-        kwargs['collection'] = collection
-        kwargs['count'] = 0
+        kwargs["collection"] = collection
+        kwargs["count"] = 0
         self._convert_parameters(kwargs)
         response = self._session_search.get(url, params=kwargs, timeout=_SEARCH_TIMEOUT)
         logger.debug(f"{response.request.url} - {response.status_code}")
         if response.status_code == requests.codes.ok:
             response_json = response.json()
-            return response_json['totalResults']
+            return response_json["totalResults"]
         else:
             raise SearchException(response)
 
-    def _get_total_file_size(self, products: Iterable[Product], file_types: ProductFileType) -> int:
-        """ Get the total file size of the given products.
+    def _get_total_file_size(
+        self, products: Iterable[Product], file_types: ProductFileType
+    ) -> int:
+        """Get the total file size of the given products.
 
         :param products: iterable of products
         :param file_types: product file types
@@ -352,12 +434,16 @@ class Catalogue:
             [
                 product_file.length
                 for product in products
-                for product_file in self._get_product_files_matching_file_types(product, file_types)
+                for product_file in self._get_product_files_matching_file_types(
+                    product, file_types
+                )
                 if product_file.length is not None
             ]
         )
 
-    def _get_product_files_matching_file_types(self, product: Product, file_types: ProductFileType) -> List[ProductFile]:
+    def _get_product_files_matching_file_types(
+        self, product: Product, file_types: ProductFileType
+    ) -> List[ProductFile]:
         """
         Get the product files matching the given file types.
 
@@ -383,7 +469,7 @@ class Catalogue:
         path: str,
         file_types: ProductFileType = ProductFileType.ALL,
         force: bool = False,
-        raise_on_failure: bool = True
+        raise_on_failure: bool = True,
     ):
         """
         Download the given products. This will download the files belonging to the given products matching the provided file types.
@@ -398,7 +484,9 @@ class Catalogue:
         if not force:
             confirmed = False
             while not confirmed:
-                in_confirmation = input(f"You are about to download {humanfriendly.format_size(self._get_total_file_size(products, file_types))}, do you want to continue? [Y/n] ")
+                in_confirmation = input(
+                    f"You are about to download {humanfriendly.format_size(self._get_total_file_size(products, file_types))}, do you want to continue? [Y/n] "
+                )
                 if any(in_confirmation.lower() == s for s in ["y", ""]):
                     confirmed = True
                 elif in_confirmation.lower() == "n":
@@ -411,16 +499,18 @@ class Catalogue:
         product: Product,
         path: str,
         file_types: ProductFileType = ProductFileType.ALL,
-        raise_on_failure: bool = True
+        raise_on_failure: bool = True,
     ):
-        """ Download a single product. This will download all files belonging to the given product.
+        """Download a single product. This will download all files belonging to the given product.
 
         :param product: product to download
         :param path: output directory to write files to
         :param file_types: type of product files to download
         :param raise_on_failure: raise an exception on a failure or silently continue
         """
-        for product_file in self._get_product_files_matching_file_types(product, file_types):
+        for product_file in self._get_product_files_matching_file_types(
+            product, file_types
+        ):
             try:
                 self.download_file(product_file, self._get_product_dir(path, product))
             except ConnectionError as e:
@@ -429,7 +519,7 @@ class Catalogue:
                     raise e
 
     def download_file(self, product_file: ProductFile, path: str):
-        """ Download a single product file.
+        """Download a single product file.
 
         :param product_file: product file to download
         :param path: output directory to write the file to
@@ -440,17 +530,21 @@ class Catalogue:
         elif protocol == "s3":
             self._download_file_s3(product_file, path)
         else:
-            raise ProductDownloadException(f"Could not download product file, {product_file.href} is not a downloadable path.")
+            raise ProductDownloadException(
+                f"Could not download product file, {product_file.href} is not a downloadable path."
+            )
 
     def _download_file_http(self, product_file: ProductFile, path: str):
-        """ Download a single product file over HTTP.
+        """Download a single product file over HTTP.
         Assumes that the href in the product file contains a valid HTTP address.
 
         :param product_file: product file to download
         :param path: output directory to write the file to
         """
         if not self._is_authorized_to_download_http(product_file):
-            raise ProductDownloadException(f"You are not authorized to download this product. Make sure you are authenticated to the catalogue.")
+            raise ProductDownloadException(
+                "You are not authorized to download this product. Make sure you are authenticated to the catalogue."
+            )
         # create output directory if it doesn't exist
         if not os.path.exists(path):
             logger.debug(f"Creating output directory {path}")
@@ -458,15 +552,22 @@ class Catalogue:
         filename = os.path.basename(product_file.href)
         out_path = os.path.join(path, filename)
         logger.info(f"Downloading {product_file.href} to {out_path}")
-        with self._session_download.get(product_file.href, stream=True, allow_redirects=False, timeout=_DOWNLOAD_TIMEOUT) as r:
+        with self._session_download.get(
+            product_file.href,
+            stream=True,
+            allow_redirects=False,
+            timeout=_DOWNLOAD_TIMEOUT,
+        ) as r:
             r.raise_for_status()
-            with open(out_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=self.config.http_download_chunk_size):
+            with open(out_path, "wb") as f:
+                for chunk in r.iter_content(
+                    chunk_size=self.config.http_download_chunk_size
+                ):
                     if chunk:
                         f.write(chunk)
 
     def _download_file_s3(self, product_file: ProductFile, path: str):
-        """ Download a single product over S3.
+        """Download a single product over S3.
         Assumes that the href in the product file contains a valid S3 link.
 
         :param product_file: product file to download
@@ -488,26 +589,34 @@ class Catalogue:
         bucket.download_file(key, out_path)
 
     def _init_s3_client(self):
-        """ Set up the S3 resource service client using the configuration values. """
+        """Set up the S3 resource service client using the configuration values."""
         # disable bucket name validation: https://creodias.eu/-/bucket-sharing-using-s3-bucket-policy
         logger.info("Initializing S3 client")
         botocore_session = botocore.session.Session()
-        botocore_session.unregister('before-parameter-build.s3', botocore.handlers.validate_bucket_name)
+        botocore_session.unregister(
+            "before-parameter-build.s3", botocore.handlers.validate_bucket_name
+        )
         boto3.setup_default_session(botocore_session=botocore_session)
 
-        if not (self.config.s3_endpoint_url and self.config.s3_access_key and self.config.s3_secret_key):
-            raise ProductDownloadException("Please provide S3 endpoint and credentials in the configuration file "
-                                           "or using environment variables in order to use S3 as a download method.")
+        if not (
+            self.config.s3_endpoint_url
+            and self.config.s3_access_key
+            and self.config.s3_secret_key
+        ):
+            raise ProductDownloadException(
+                "Please provide S3 endpoint and credentials in the configuration file "
+                "or using environment variables in order to use S3 as a download method."
+            )
 
         self.s3 = boto3.resource(
-            's3',
+            "s3",
             endpoint_url=self.config.s3_endpoint_url,
             aws_access_key_id=self.config.s3_access_key,
-            aws_secret_access_key=self.config.s3_secret_key
+            aws_secret_access_key=self.config.s3_secret_key,
         )
 
     def _is_authorized_to_download_http(self, product_file: ProductFile) -> bool:
-        """ Check if the authenticated user has authorization to download the product file.
+        """Check if the authenticated user has authorization to download the product file.
         If the user is not authenticated, a redirect will take place.
 
         :param product_file: product file
@@ -517,8 +626,8 @@ class Catalogue:
 
     @staticmethod
     def _convert_parameters(params):
-        parameter_time = ['start', 'end']
-        parameter_time_interval = ['publicationDate', 'modificationDate']
+        parameter_time = ["start", "end"]
+        parameter_time_interval = ["publicationDate", "modificationDate"]
 
         for p in parameter_time:
             if p in params:
@@ -529,24 +638,26 @@ class Catalogue:
                 if type(params[p]) == tuple:
                     params[p] = _tuple_to_interval_str(params[p], p, _date_to_str)
 
-        if 'geometry' in params:
-            p = 'geometry'
+        if "geometry" in params:
+            p = "geometry"
             if isinstance(params[p], str):
                 pass
             elif isinstance(params[p], BaseGeometry):
                 params[p] = wkt.dumps(params[p], trim=True)
 
-        if 'bbox' in params:
-            p = 'bbox'
+        if "bbox" in params:
+            p = "bbox"
             if isinstance(params[p], str):
                 pass
             elif isinstance(params[p], list):
-                params[p] = ','.join(str(i) for i in params[p])
+                params[p] = ",".join(str(i) for i in params[p])
             elif isinstance(params[p], dict):
-                params[p] = f"{params[p]['west']},{params[p]['south']},{params[p]['east']},{params[p]['north']}"
+                params[
+                    p
+                ] = f"{params[p]['west']},{params[p]['south']},{params[p]['east']},{params[p]['north']}"
 
-        if 'cloudCover' in params:
-            p = 'cloudCover'
+        if "cloudCover" in params:
+            p = "cloudCover"
             if type(params[p]) == tuple:
                 params[p] = _tuple_to_interval_str(params[p], p, str)
             elif isinstance(params[p], int) or isinstance(params[p], float):
@@ -563,13 +674,18 @@ class Catalogue:
         :param limit: limit the number of requested features
         :return: boolean indicating whether all features can be retrieved
         """
-        page_size = response['itemsPerPage']
-        total_results = response['totalResults']
-        requested_results = total_results if limit is None else min(limit, total_results)
+        page_size = response["itemsPerPage"]
+        total_results = response["totalResults"]
+        requested_results = (
+            total_results if limit is None else min(limit, total_results)
+        )
 
-        if 'last' in response['properties']['links'] and len(response['properties']['links']['last']) == 1:
-            last_href = response['properties']['links']['last'][0]['href']
-            last_start_index = int(parse_qs(urlparse(last_href).query)['startIndex'][0])
+        if (
+            "last" in response["properties"]["links"]
+            and len(response["properties"]["links"]["last"]) == 1
+        ):
+            last_href = response["properties"]["links"]["last"][0]["href"]
+            last_start_index = int(parse_qs(urlparse(last_href).query)["startIndex"][0])
 
             return requested_results <= last_start_index + page_size - 1
         else:
@@ -582,11 +698,15 @@ class Catalogue:
         """
         return self._auth is not None
 
-    def _get_paginated_feature_generator(self, url: str, url_params: dict, builder) -> Iterator:
+    def _get_paginated_feature_generator(
+        self, url: str, url_params: dict, builder
+    ) -> Iterator:
         limit = url_params.pop("limit", None)
         feature_count = 0
 
-        response = self._session_search.get(url, params=url_params, timeout=_SEARCH_TIMEOUT)
+        response = self._session_search.get(
+            url, params=url_params, timeout=_SEARCH_TIMEOUT
+        )
         logger.debug(f"{response.request.url} - {response.status_code}")
 
         if response.status_code == requests.codes.ok:
@@ -594,22 +714,23 @@ class Catalogue:
             if not Catalogue._can_get_all_features(response_json, limit):
                 raise TooManyResultsException(
                     f"Too many results: {response_json['totalResults']} found. "
-                    f"Please narrow down your search.")
+                    f"Please narrow down your search."
+                )
 
-            for f in response_json['features']:
+            for f in response_json["features"]:
                 feature_count += 1
                 yield builder(f)
                 if limit is not None and feature_count >= limit:
                     return
 
-            while 'next' in response_json['properties']['links']:
-                url = response_json['properties']['links']['next'][0]['href']
+            while "next" in response_json["properties"]["links"]:
+                url = response_json["properties"]["links"]["next"][0]["href"]
                 response = self._session_search.get(url, timeout=_SEARCH_TIMEOUT)
                 logger.debug(f"{response.request.url} - {response.status_code}")
 
                 if response.status_code == requests.codes.ok:
                     response_json = response.json()
-                    for f in response_json['features']:
+                    for f in response_json["features"]:
                         feature_count += 1
                         yield builder(f)
                         if limit is not None and feature_count >= limit:
@@ -621,34 +742,74 @@ class Catalogue:
 
     @staticmethod
     def _build_collection(feature: dict) -> Collection:
-        """ Build collection object from the JSON response.
+        """Build collection object from the JSON response.
         :param feature: feature as a JSON dict
         """
-        return Collection(feature['id'], feature, shape(feature['geometry']), feature['bbox'], feature['properties'])
+        return Collection(
+            feature["id"],
+            feature,
+            shape(feature["geometry"]),
+            feature["bbox"],
+            feature["properties"],
+        )
 
     @staticmethod
     def _build_product(feature: dict) -> Product:
-        """ Build product object from the JSON response.
+        """Build product object from the JSON response.
         :param feature: feature as a JSON dict
         """
-        id = feature['id']
-        title = feature['properties']['title']
-        geometry = shape(feature['geometry'])
-        bbox = feature['bbox']
+        id = feature["id"]
+        title = feature["properties"]["title"]
+        geometry = shape(feature["geometry"])
+        bbox = feature["bbox"]
 
         # get first acquisitionParameters block, if available
-        acquisitionParameters = next(iter([i['acquisitionParameters'] for i in feature['properties']['acquisitionInformation'] if 'acquisitionParameters' in i]), None)
-        beginningDateTime = _parse_date(acquisitionParameters['beginningDateTime']) if acquisitionParameters and 'beginningDateTime' in acquisitionParameters else None
-        endingDateTime = _parse_date(acquisitionParameters['endingDateTime']) if acquisitionParameters and 'endingDateTime' in acquisitionParameters else None
+        acquisitionParameters = next(
+            iter(
+                [
+                    i["acquisitionParameters"]
+                    for i in feature["properties"]["acquisitionInformation"]
+                    if "acquisitionParameters" in i
+                ]
+            ),
+            None,
+        )
+        beginningDateTime = (
+            _parse_date(acquisitionParameters["beginningDateTime"])
+            if acquisitionParameters and "beginningDateTime" in acquisitionParameters
+            else None
+        )
+        endingDateTime = (
+            _parse_date(acquisitionParameters["endingDateTime"])
+            if acquisitionParameters and "endingDateTime" in acquisitionParameters
+            else None
+        )
 
         # build product files
-        links = feature['properties']['links']
-        data = Catalogue._build_files(links['data']) if 'data' in links else []
-        related = Catalogue._build_files(links['related']) if 'related' in links else []
-        previews = Catalogue._build_files(links['previews']) if 'previews' in links else []
-        alternates = Catalogue._build_files(links['alternates']) if 'alternates' in links else []
+        links = feature["properties"]["links"]
+        data = Catalogue._build_files(links["data"]) if "data" in links else []
+        related = Catalogue._build_files(links["related"]) if "related" in links else []
+        previews = (
+            Catalogue._build_files(links["previews"]) if "previews" in links else []
+        )
+        alternates = (
+            Catalogue._build_files(links["alternates"]) if "alternates" in links else []
+        )
 
-        return Product(id, title, feature, geometry, bbox, beginningDateTime, endingDateTime, feature['properties'], data, related, previews, alternates)
+        return Product(
+            id,
+            title,
+            feature,
+            geometry,
+            bbox,
+            beginningDateTime,
+            endingDateTime,
+            feature["properties"],
+            data,
+            related,
+            previews,
+            alternates,
+        )
 
     @staticmethod
     def _build_files(links: list) -> List[ProductFile]:
@@ -656,17 +817,17 @@ class Catalogue:
 
     @staticmethod
     def _build_file(link: dict) -> ProductFile:
-        href = link.get('href')
-        length = link.get('length', None)
-        title = link.get('title', None)
-        type = link.get('type', None)
-        category = link.get('category', None)
+        href = link.get("href")
+        length = link.get("length", None)
+        title = link.get("title", None)
+        type = link.get("type", None)
+        category = link.get("category", None)
         return ProductFile(href, length, title, type, category)
 
     @staticmethod
     def _get_product_dir(path: str, product: Product):
         try:
-            return os.path.join(path, product.id[product.id.rindex(':')+1:])
+            return os.path.join(path, product.id[product.id.rindex(":") + 1 :])
         except ValueError:
             return os.path.join(path, product.id)
 
@@ -674,7 +835,7 @@ class Catalogue:
 def _parse_date(datestr: str) -> dt.datetime:
     # remove the milliseconds
     # eg. 2021-04-16T16:15:14.243Z --> 2021-04-16T16:15:14
-    datestr = datestr[:datestr.find('.')][:datestr.find('Z')]
+    datestr = datestr[: datestr.find(".")][: datestr.find("Z")]
     return dt.datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%S")
 
 
@@ -687,11 +848,15 @@ def _date_to_str(date: Union[str, dt.datetime, dt.date]) -> str:
         return dt.date.strftime(date, "%Y-%m-%d")
 
 
-def _tuple_to_interval_str(tuple: Tuple[T, T], param_name: str, formatter: Callable[[T], str]) -> str:
+def _tuple_to_interval_str(
+    tuple: Tuple[T, T], param_name: str, formatter: Callable[[T], str]
+) -> str:
     if len(tuple) != 2:
-        raise ParameterParserException(f"Failed to parse the value of the '{param_name}' parameter. "
-                                       f"A tuple of length {len(tuple)} is not supported. "
-                                       f"To use an interval, the tuple should be of length 2.")
+        raise ParameterParserException(
+            f"Failed to parse the value of the '{param_name}' parameter. "
+            f"A tuple of length {len(tuple)} is not supported. "
+            f"To use an interval, the tuple should be of length 2."
+        )
 
     t1, t2 = tuple
     if t1 is None and t2 is None:

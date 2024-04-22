@@ -7,7 +7,6 @@ from terracatalogueclient.exceptions import ProductDownloadException
 
 
 class TestCGLS(unittest.TestCase):
-
     config_cgls = CatalogueConfig.from_environment(CatalogueEnvironment.CGLS)
 
     def test_get_collections(self):
@@ -21,12 +20,12 @@ class TestCGLS(unittest.TestCase):
         collection_id = "clms_global_ba_300m_v3_daily_netcdf"
         products = list(
             catalogue.get_products(
-                collection_id,
-                start=date(2023, 6, 1),
-                end=date(2023, 6, 30)
+                collection_id, start=date(2023, 6, 1), end=date(2023, 6, 30)
             )
         )
-        self.assertIn("c_gls_BA300-NRT_202306260000_GLOBE_S3_V3.1.1", {p.id for p in products})
+        self.assertIn(
+            "c_gls_BA300-NRT_202306260000_GLOBE_S3_V3.1.1", {p.id for p in products}
+        )
 
     def test_auth_not_supported(self):
         with self.assertRaises(ProductDownloadException):
@@ -37,9 +36,9 @@ class TestCGLS(unittest.TestCase):
     def test_download(self):
         catalogue = Catalogue(self.config_cgls)
         params = {
-            'collection': "clms_global_ba_300m_v3_daily_netcdf",
-            'start': date(2023, 6, 1),
-            'end': date(2023, 6, 30)
+            "collection": "clms_global_ba_300m_v3_daily_netcdf",
+            "start": date(2023, 6, 1),
+            "end": date(2023, 6, 30),
         }
         nb_products = catalogue.get_product_count(**params)
         self.assertGreater(nb_products, 1)
@@ -53,7 +52,7 @@ class TestCGLS(unittest.TestCase):
         params = {
             "collection": "clms_global_lst_5km_v2_hourly_netcdf",
             "start": date(2023, 1, 1),
-            "end": date(2023, 1, 2)
+            "end": date(2023, 1, 2),
         }
         products = catalogue.get_products(**params)
         with tempfile.TemporaryDirectory() as tmpdir:

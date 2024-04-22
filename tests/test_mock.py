@@ -6,52 +6,59 @@ import os
 
 
 class TestMock(TestCase):
-
     def test_download_force(self):
         with patch.object(Catalogue, "download_product") as mock_download_product:
             catalogue = Catalogue()
-            products = list(catalogue.get_products(
-                collection="urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
-                start="2021-02-01",
-                end="2021-02-28",
-                tileId="31UGS",
-                resolution=20
-            ))
-            catalogue.download_products(products, '/tmp', force=True)
+            products = list(
+                catalogue.get_products(
+                    collection="urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
+                    start="2021-02-01",
+                    end="2021-02-28",
+                    tileId="31UGS",
+                    resolution=20,
+                )
+            )
+            catalogue.download_products(products, "/tmp", force=True)
 
             mock_download_product.assert_called()
 
     def test_download_confirm(self):
-        with patch.object(Catalogue, "download_product") as mock_download_product, \
-                patch("builtins.input") as mock_input:
+        with patch.object(
+            Catalogue, "download_product"
+        ) as mock_download_product, patch("builtins.input") as mock_input:
             mock_input.return_value = "y"
 
             catalogue = Catalogue()
-            products = list(catalogue.get_products(
-                collection="urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
-                start="2021-02-01",
-                end="2021-02-28",
-                tileId="31UGS",
-                resolution=20
-            ))
-            catalogue.download_products(products, '/tmp')
+            products = list(
+                catalogue.get_products(
+                    collection="urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
+                    start="2021-02-01",
+                    end="2021-02-28",
+                    tileId="31UGS",
+                    resolution=20,
+                )
+            )
+            catalogue.download_products(products, "/tmp")
 
             mock_download_product.assert_called()
 
     def test_download_abort(self):
-        with patch.object(Catalogue, "download_product") as mock_download_product, \
-                patch("builtins.input") as mock_input:
+        with patch.object(
+            Catalogue, "download_product"
+        ) as mock_download_product, patch("builtins.input") as mock_input:
             mock_input.return_value = "n"
 
             catalogue = Catalogue()
-            products = list(catalogue.get_products(
-                collection="urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
-                start="2021-02-01",
-                end="2021-02-28",
-                tileId="31UGS",
-                resolution=20
-            ))
-            catalogue.download_products(products, '/tmp')
+            products = list(
+                catalogue.get_products(
+                    collection="urn:eop:VITO:TERRASCOPE_S2_FAPAR_V2",
+                    start="2021-02-01",
+                    end="2021-02-28",
+                    tileId="31UGS",
+                    resolution=20,
+                )
+            )
+            catalogue.download_products(products, "/tmp")
 
             mock_download_product.assert_not_called()
 
@@ -83,22 +90,40 @@ class TestMock(TestCase):
             _parse_date("2015-07-04T10:10:06.027Z"),
             _parse_date("2015-07-04T10:10:06.027Z"),
             None,
-            data=[ProductFile(
-                "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_NDVI_10M_V200.tif",
-                39500389, "NDVI_10M", "image/tiff"
-            )],
-            related=[ProductFile(
-                "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_SCENECLASSIFICATION_20M_V200.tif",
-                1521972, "SCENECLASSIFICATION_20M", "image/tiff", "QUALITY"
-            )],
-            previews=[ProductFile(
-                "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_NDVI_QUICKLOOK_V200.tif",
-                182760, None, "image/tiff", "QUICKLOOK"
-            )],
-            alternates=[ProductFile(
-                "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_NDVI_10M_V200.xml",
-                32523, "Inspire metadata", "application/vnd.iso.19139+xml"
-            )]
+            data=[
+                ProductFile(
+                    "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_NDVI_10M_V200.tif",
+                    39500389,
+                    "NDVI_10M",
+                    "image/tiff",
+                )
+            ],
+            related=[
+                ProductFile(
+                    "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_SCENECLASSIFICATION_20M_V200.tif",
+                    1521972,
+                    "SCENECLASSIFICATION_20M",
+                    "image/tiff",
+                    "QUALITY",
+                )
+            ],
+            previews=[
+                ProductFile(
+                    "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_NDVI_QUICKLOOK_V200.tif",
+                    182760,
+                    None,
+                    "image/tiff",
+                    "QUICKLOOK",
+                )
+            ],
+            alternates=[
+                ProductFile(
+                    "https://services.terrascope.be/download/Sentinel2/NDVI_V2/2015/07/04/S2A_20150704T101006_32TML_NDVI_V200/S2A_20150704T101006_32TML_NDVI_10M_V200.xml",
+                    32523,
+                    "Inspire metadata",
+                    "application/vnd.iso.19139+xml",
+                )
+            ],
         )
 
         with patch.object(Catalogue, "download_file") as mock_download_file:
@@ -114,12 +139,16 @@ class TestMock(TestCase):
             # download all files
             catalogue.download_products([product], tmp_dir, force=True)
             self.assertEqual(4, mock_download_file.call_count)
-            for pf in product.data + product.related + product.previews + product.alternates:
+            for pf in (
+                product.data + product.related + product.previews + product.alternates
+            ):
                 self.assertIn(((pf, download_dir),), mock_download_file.call_args_list)
             mock_download_file.reset_mock()
 
             # combine file types
-            catalogue.download_product(product, tmp_dir, ProductFileType.DATA | ProductFileType.RELATED)
+            catalogue.download_product(
+                product, tmp_dir, ProductFileType.DATA | ProductFileType.RELATED
+            )
             self.assertEqual(2, mock_download_file.call_count)
             for pf in product.data + product.related:
                 self.assertIn(((pf, download_dir),), mock_download_file.call_args_list)

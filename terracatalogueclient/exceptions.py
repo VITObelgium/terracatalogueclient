@@ -2,22 +2,25 @@ import requests
 
 
 class ParameterParserException(Exception):
-    """ Raised when a parameter value cannot be parsed. """
+    """Raised when a parameter value cannot be parsed."""
+
     pass
 
 
 class TooManyResultsException(Exception):
-    """ Raised when the query returns too many results. """
+    """Raised when the query returns too many results."""
+
     pass
 
 
 class ProductDownloadException(Exception):
-    """ Raised when the product cannot be downloaded. """
+    """Raised when the product cannot be downloaded."""
+
     pass
 
 
 class SearchException(Exception):
-    """ Raised when the search operation cannot be executed.
+    """Raised when the search operation cannot be executed.
 
     Follows the OpenSearch GeoJSON Response Encoding specification:
     https://docs.opengeospatial.org/is/17-047r1/17-047r1.html#39
@@ -35,9 +38,14 @@ class SearchException(Exception):
         messages = []
         try:
             self.body = response.json()
-            self.search_exceptions = self.body['exceptions']
+            self.search_exceptions = self.body["exceptions"]
 
-            exception_messages = [f"{e['locator']} - {e['exceptionText']}" if 'locator' in e else e['exceptionText'] for e in self.search_exceptions]
+            exception_messages = [
+                f"{e['locator']} - {e['exceptionText']}"
+                if "locator" in e
+                else e["exceptionText"]
+                for e in self.search_exceptions
+            ]
             messages.extend(exception_messages)
         except ValueError:
             messages.append(response.content)
