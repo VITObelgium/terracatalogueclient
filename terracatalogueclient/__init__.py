@@ -1,5 +1,5 @@
 __title__ = "terracatalogueclient"
-__version__ = "0.1.17"
+__version__ = "0.1.18"
 __author__ = "Stijn Caerts"
 
 from terracatalogueclient.client import (
