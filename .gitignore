@@ -8,3 +8,5 @@ pytest/
 venv/
 .venv
 docs/_build
+.tox
+tox.ini
