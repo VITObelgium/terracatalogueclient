@@ -20,11 +20,11 @@ class TestCGLS(unittest.TestCase):
         collection_id = "clms_global_ba_300m_v3_daily_netcdf"
         products = list(
             catalogue.get_products(
-                collection_id, start=date(2023, 6, 1), end=date(2023, 6, 30)
+                collection_id, start=date(2023, 7, 1), end=date(2023, 8, 31)
             )
         )
         self.assertIn(
-            "c_gls_BA300-NRT_202306260000_GLOBE_S3_V3.1.1", {p.id for p in products}
+            "c_gls_BA300-NRT_202307220000_GLOBE_S3_V3.1.1", {p.id for p in products}
         )
 
     def test_auth_not_supported(self):
@@ -35,14 +35,15 @@ class TestCGLS(unittest.TestCase):
 
     def test_download(self):
         catalogue = Catalogue(self.config_cgls)
+        start_date = date(2023, 7, 1)
+        end_date = date(2023, 7, 31)
         params = {
             "collection": "clms_global_ba_300m_v3_daily_netcdf",
-            "start": date(2023, 6, 1),
-            "end": date(2023, 6, 30),
+            "start": start_date,
+            "end": end_date,
         }
         nb_products = catalogue.get_product_count(**params)
-        self.assertGreater(nb_products, 1)
-        self.assertLess(nb_products, 10)
+        self.assertEqual(nb_products, (end_date - start_date).days + 1)
         products = catalogue.get_products(**params)
         with tempfile.TemporaryDirectory() as tmpdir:
             catalogue.download_product(next(products), tmpdir)
