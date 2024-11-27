@@ -9,7 +9,8 @@
 
 pythonPipeline {
   package_name = 'terracatalogueclient'
-  python_version = '3.6'
+  python_version = '3.9'
   wheel_repo = 'python-packages-public'
   create_tag_job = true
+  upload_pypi = true
 }
