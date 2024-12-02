@@ -13,7 +13,6 @@ class TestHRVPP(unittest.TestCase):
 
     def test_get_collections(self):
         catalogue = Catalogue(self.config_hrvpp)
-        catalogue._session_search.verify = False
         collections = list(catalogue.get_collections())
         collection_ids = [collection.id for collection in collections]
         self.assertIn(
@@ -22,7 +21,6 @@ class TestHRVPP(unittest.TestCase):
 
     def test_get_products(self):
         catalogue = Catalogue(self.config_hrvpp)
-        catalogue._session_search.verify = False
 
         tileId = "31UGS"
         products = list(
