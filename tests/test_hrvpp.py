@@ -1,6 +1,7 @@
 import os
 import unittest
 import tempfile
+
 from terracatalogueclient import Catalogue
 from terracatalogueclient.config import CatalogueConfig
 from terracatalogueclient.config import CatalogueEnvironment
@@ -20,6 +21,7 @@ class TestHRVPP(unittest.TestCase):
 
     def test_get_products(self):
         catalogue = Catalogue(self.config_hrvpp)
+
         tileId = "31UGS"
         products = list(
             catalogue.get_products(

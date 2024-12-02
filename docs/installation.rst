@@ -6,14 +6,20 @@ Installation
     the package is already pre-installed for you.
 
 
-This package is available in the public Terrascope PyPi repository and can be installed using ``pip``::
+This package is available both in PyPI and the public Terrascope repository and can be installed using ``pip``.
+
+**From PyPI**
+
+    $ pip install terracatalogueclient
+
+**From the Terrascope repository**
 
     $ pip install --extra-index-url https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple terracatalogueclient
 
 
 Alternatively, you can configure ``pip`` to use the Terrascope repository as an additional package source:
 
-- add the Terrascope PyPi repository in your `pip configuration file <https://pip.pypa.io/en/stable/user_guide/#configuration>`_::
+- add the Terrascope PyPI repository in your `pip configuration file <https://pip.pypa.io/en/stable/user_guide/#configuration>`_::
 
     [global]
     extra-index-url = https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple

@@ -10,7 +10,16 @@ Information on the usage of the Python client and a full API overview can be fou
 
 ## Installation
 
-This package is available in the public Terrascope PyPi repository and can be installed using `pip`:
+This package is available in PyPI and the public Terrascope repository and can be installed using `pip`. 
+When you are using a [Terrascope Virtual Machine (VM) or Notebooks](https://terrascope.be/en/services), the package is already pre-installed for you.
+
+### From PyPI
+
+  ```shell
+  $ pip install terracatalogueclient
+  ```
+
+### From the Terrascope repository
 - add the Terrascope PyPi repository in your [`pip` configuration file](https://pip.pypa.io/en/stable/user_guide/#configuration)
     ```ini
     [global]
@@ -24,9 +33,6 @@ Or provide the Terrascope PyPi repository directly to the installation command:
 ```shell
 $ pip install --extra-index-url https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple terracatalogueclient
 ```
-
-When you are using a [Terrascope Virtual Machine (VM) or Notebooks](https://terrascope.be/en/services), 
-the package is already pre-installed for you.
 
 ## Development
 ### Building the docs
