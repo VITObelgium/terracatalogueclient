@@ -18,13 +18,13 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Build HTML docs
         run: docker run --rm -v $GITHUB_WORKSPACE:/workspace --workdir /workspace/docs sphinxdoc/sphinx sh -c "pip3 install -r requirements.txt; make html"
 
       # Create an artifact of the HTML output
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: Documentation
           path: docs/_build/html/
