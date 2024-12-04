@@ -8,12 +8,17 @@ with open("terracatalogueclient/__init__.py", "r") as fd:
 
 version = __version__
 
+with open("README.md", "r") as mdf:
+    readme_content = mdf.read()
+
 setup(
     name="terracatalogueclient",
     version=version,
     author="Stijn Caerts",
     author_email="stijn.caerts@vito.be",
     description="Client for the Terrascope EO catalogue",
+    long_description=readme_content,
+    long_description_content_type="text/markdown",
     url="https://github.com/VITObelgium/terracatalogueclient",
     packages=find_packages(),
     package_data={"": ["resources/*"]},
