@@ -23,7 +23,7 @@ When you are using a [Terrascope Virtual Machine (VM) or Notebooks](https://terr
 - add the Terrascope PyPi repository in your [`pip` configuration file](https://pip.pypa.io/en/stable/user_guide/#configuration)
     ```ini
     [global]
-    extra-index-url = https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple
+    extra-index-url = https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages-public/simple
     ```
 - install the `terracatalogueclient` package
     ```shell
@@ -31,7 +31,7 @@ When you are using a [Terrascope Virtual Machine (VM) or Notebooks](https://terr
     ```
 Or provide the Terrascope PyPi repository directly to the installation command:
 ```shell
-$ pip install --extra-index-url https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages/simple terracatalogueclient
+$ pip install --extra-index-url https://artifactory.vgt.vito.be/artifactory/api/pypi/python-packages-public/simple terracatalogueclient
 ```
 
 ## Development
