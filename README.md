@@ -5,6 +5,10 @@ This client uses the OpenSearch REST service of the catalogue and makes it easie
 
 More information about the OpenSearch interface can be found in the [Terrascope Documentation](https://docs.terrascope.be/#/Developers/WebServices/TerraCatalogue/TerraCatalogue).
 
+> [!IMPORTANT]
+> The Terrascope OpenSearch API is deprecated and its service will be discontinued. Please migrate to the STAC API and its Python ecosystem.
+> The [Terrascope documentation](https://docs.terrascope.be/Developers/WebServices/TerraCatalogue/STACAPI.html) explains how to get started with these tools.
+
 ## Documentation
 Information on the usage of the Python client and a full API overview can be found in [the package documentation](https://vitobelgium.github.io/terracatalogueclient/).
 
